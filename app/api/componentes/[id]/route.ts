@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db/mongoose'
 import Componente from '@/models/Componente'
 
-// GET — obtener un componente por id_componente
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB()
-    const componente = await Componente.findOne({ id_componente: params.id.toUpperCase() })
+    const { id } = await params
+    const componente = await Componente.findOne({ id_componente: decodeURIComponent(id).toUpperCase() })
     if (!componente) {
       return NextResponse.json({ ok: false, error: 'Componente no encontrado' }, { status: 404 })
     }
@@ -16,43 +16,35 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-// PUT — editar un componente
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB()
+    const { id } = await params
     const body = await req.json()
-
     const componente = await Componente.findOneAndUpdate(
-      { id_componente: params.id.toUpperCase() },
+      { id_componente: decodeURIComponent(id).toUpperCase() },
       { $set: body },
       { new: true, runValidators: true }
     )
-
     if (!componente) {
       return NextResponse.json({ ok: false, error: 'Componente no encontrado' }, { status: 404 })
     }
-
     return NextResponse.json({ ok: true, data: componente })
   } catch {
     return NextResponse.json({ ok: false, error: 'Error al editar componente' }, { status: 500 })
   }
 }
 
-// DELETE — baja lógica (no borra de la base, solo desactiva)
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB()
-
-    const componente = await Componente.findOneAndUpdate(
-      { id_componente: params.id.toUpperCase() },
-      { $set: { activo: false } },
-      { new: true }
-    )
-
+    const { id } = await params
+    const componente = await Componente.findOneAndDelete({
+      id_componente: decodeURIComponent(id).toUpperCase()
+    })
     if (!componente) {
       return NextResponse.json({ ok: false, error: 'Componente no encontrado' }, { status: 404 })
     }
-
     return NextResponse.json({ ok: true, data: componente })
   } catch {
     return NextResponse.json({ ok: false, error: 'Error al eliminar componente' }, { status: 500 })

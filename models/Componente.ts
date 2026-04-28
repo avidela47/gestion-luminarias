@@ -10,6 +10,7 @@ export interface IComponente extends Document {
   precio_unitario: number
   ubicacion: string
   notas: string
+  foto: string
   activo: boolean
   createdAt: Date
   updatedAt: Date
@@ -27,6 +28,7 @@ const ComponenteSchema = new Schema<IComponente>(
     ubicacion: { type: String, default: '' },
     notas: { type: String, default: '' },
     activo: { type: Boolean, default: true },
+    foto: { type: String, default: '' },
   },
   { timestamps: true }
 )

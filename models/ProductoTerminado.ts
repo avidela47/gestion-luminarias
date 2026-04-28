@@ -7,6 +7,7 @@ export interface IProductoTerminado extends Document {
   stock_minimo: number
   precio_venta: number
   notas: string
+  foto: string
   activo: boolean
   createdAt: Date
   updatedAt: Date
@@ -21,6 +22,7 @@ const ProductoTerminadoSchema = new Schema<IProductoTerminado>(
     precio_venta: { type: Number, default: 0 },
     notas: { type: String, default: '' },
     activo: { type: Boolean, default: true },
+    foto: { type: String, default: '' },
   },
   { timestamps: true }
 )
