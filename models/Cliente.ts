@@ -30,9 +30,19 @@ const ClienteSchema = new Schema<ICliente>(
     localidad: { type: String, default: '' },
     provincia: { type: String, default: '' },
     contacto: { type: String, default: '' },
-    condicion_iva: {
+   condicion_iva: {
       type: String,
-      enum: ['Responsable Inscripto', 'Monotributista', 'Exento', 'Consumidor Final'],
+      enum: [
+        'Responsable Inscripto',
+        'Responsable Inscripto 10',
+        'Responsable Inscripto M',
+        'Monotributo',
+        'Exento',
+        'Consumidor Final',
+        'No Categorizado',
+        'Operaciones Turismo',
+        'Resp Insc Ley 16744 - L Boca',
+      ],
       default: 'Responsable Inscripto',
     },
     notas: { type: String, default: '' },
