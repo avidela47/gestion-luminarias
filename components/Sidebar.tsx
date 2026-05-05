@@ -3,9 +3,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { signOut } from 'next-auth/react'
 import {
-  LayoutDashboard, Package, Cpu, Factory, ArrowLeftRight, Users, Truck, BoxSelect, FileText,
-  Receipt, BarChart3, ChevronRight, ClipboardList,
+  LayoutDashboard, Package, Cpu, Factory, ArrowLeftRight,
+  Users, Truck, BoxSelect, FileText, Receipt,
+  BarChart3, ChevronRight, ClipboardList, LogOut,
 } from 'lucide-react'
 
 const menuItems = [
@@ -149,11 +151,31 @@ export default function Sidebar() {
         style={{
           padding: '16px 20px',
           borderTop: '1px solid var(--sidebar-border)',
-          fontSize: '11px',
-          color: 'var(--text-muted)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
-        v1.0.0 — {new Date().getFullYear()}
+        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+          v1.0.0 — {new Date().getFullYear()}
+        </div>
+        <button
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '11px',
+            color: 'var(--text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '4px',
+          }}
+          title="Cerrar sesión"
+        >
+          <LogOut size={13} /> Salir
+        </button>
       </div>
     </aside>
   )
