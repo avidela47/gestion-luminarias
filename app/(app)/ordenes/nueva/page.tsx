@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Plus, Trash2, ArrowLeft } from 'lucide-react'
@@ -33,7 +34,7 @@ interface Linea {
   cantidad_fabricar: number
 }
 
-export default function NuevaOrdenPage() {
+function NuevaOrdenForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const presupuestoId = searchParams.get('presupuesto')
@@ -86,7 +87,7 @@ export default function NuevaOrdenPage() {
       }
       if (productosData.ok) setProductosTerminados(productosData.data)
     })
-   }, [presupuestoId])
+  }, [presupuestoId])
 
   const seleccionarPresupuesto = (id: string) => {
     const p = presupuestos.find((p) => p._id === id)
@@ -298,5 +299,13 @@ export default function NuevaOrdenPage() {
         </button>
       </div>
     </div>
+  )
+}
+
+export default function NuevaOrdenPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '32px', color: 'var(--text-muted)' }}>Cargando...</div>}>
+      <NuevaOrdenForm />
+    </Suspense>
   )
 }
