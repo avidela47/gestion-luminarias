@@ -4,19 +4,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard,
-  Package,
-  Cpu,
-  Factory,
-  ArrowLeftRight,
-  ShoppingCart,
-  Users,
-  Truck,
-  BoxSelect,
-  FileText,
-  Receipt,
-  BarChart3,
-  ChevronRight,
+  LayoutDashboard, Package, Cpu, Factory, ArrowLeftRight, Users, Truck, BoxSelect, FileText,
+  Receipt, BarChart3, ChevronRight, ClipboardList,
 } from 'lucide-react'
 
 const menuItems = [
@@ -37,7 +26,7 @@ const menuItems = [
       { label: 'Proveedores', href: '/proveedores', icon: Truck },
       { label: 'Producto Terminado', href: '/productos', icon: BoxSelect },
       { label: 'Presupuestos', href: '/presupuestos', icon: FileText },
-      { label: 'Remitos', href: '/remitos', icon: ShoppingCart },
+      { label: 'Órdenes de Trabajo', href: '/ordenes', icon: ClipboardList },
       { label: 'Facturas', href: '/facturas', icon: Receipt },
     ],
   },
