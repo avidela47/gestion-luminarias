@@ -27,7 +27,7 @@ const menuItems = [
       { label: 'Producto Terminado', href: '/productos', icon: BoxSelect },
       { label: 'Presupuestos', href: '/presupuestos', icon: FileText },
       { label: 'Órdenes de Trabajo', href: '/ordenes', icon: ClipboardList },
-      { label: 'Facturas', href: '/facturas', icon: Receipt },
+      { label: 'Recibos', href: '/recibos', icon: Receipt },
     ],
   },
   {
