@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { ProductoTerminado } from './page'
+import UploadFoto from '@/components/UploadFoto'
 
 interface Props {
   producto: ProductoTerminado | null
@@ -20,6 +21,7 @@ export default function ModalProducto({ producto, onClose, onGuardado }: Props) 
     stock_minimo: producto?.stock_minimo ?? 0,
     precio_venta: producto?.precio_venta ?? 0,
     notas: producto?.notas ?? '',
+    foto: producto?.foto ?? '',
   })
 
   const [guardando, setGuardando] = useState(false)
@@ -106,6 +108,18 @@ export default function ModalProducto({ producto, onClose, onGuardado }: Props) 
         </div>
 
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+              Foto
+            </label>
+            <UploadFoto
+              value={form.foto}
+              onChange={(url) => setForm((p) => ({ ...p, foto: url }))}
+              code={form.codigo_luminaria || 'producto'}
+            />
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {campo('Código luminaria *', 'codigo_luminaria', 'text', 'Ej: SYP323-150-100W')}
             {campo('Nombre *', 'nombre', 'text', 'Descripción del producto')}

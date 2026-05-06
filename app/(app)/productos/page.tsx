@@ -13,6 +13,7 @@ export interface ProductoTerminado {
   precio_venta: number
   notas: string
   activo: boolean
+  foto: string
 }
 
 export default function ProductosPage() {
