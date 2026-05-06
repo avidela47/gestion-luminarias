@@ -13,6 +13,7 @@ export interface IReceta extends Document {
   activa: boolean
   componentes: ComponenteReceta[]
   notas: string
+  foto: string
   createdAt: Date
   updatedAt: Date
 }
@@ -34,6 +35,7 @@ const RecetaSchema = new Schema<IReceta>(
     activa: { type: Boolean, default: true },
     componentes: { type: [ComponenteRecetaSchema], default: [] },
     notas: { type: String, default: '' },
+    foto: { type: String, default: '' },
   },
   { timestamps: true }
 )

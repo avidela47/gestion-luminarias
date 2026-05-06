@@ -14,6 +14,7 @@ export interface Receta {
   activa: boolean
   componentes: { id_componente: string; cantidad: number }[]
   notas: string
+  foto: string
 }
 
 export default function RecetasPage() {

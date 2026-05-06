@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, Plus, Trash2 } from 'lucide-react'
 import type { Receta } from './page'
+import UploadFoto from '@/components/UploadFoto'
 
 interface ComponenteOpcion {
   id_componente: string
@@ -24,6 +25,7 @@ export default function ModalReceta({ receta, onClose, onGuardado }: Props) {
     nombre: receta?.nombre ?? '',
     activa: receta?.activa ?? true,
     notas: receta?.notas ?? '',
+    foto: receta?.foto ?? '',
   })
 
   const [componentes, setComponentes] = useState<{ id_componente: string; cantidad: number }[]>(
@@ -92,7 +94,6 @@ export default function ModalReceta({ receta, onClose, onGuardado }: Props) {
         width: '100%', maxWidth: '640px', maxHeight: '90vh',
         overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
       }}>
-        {/* Header */}
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '20px 24px', borderBottom: '1px solid var(--border)',
@@ -106,8 +107,18 @@ export default function ModalReceta({ receta, onClose, onGuardado }: Props) {
           </button>
         </div>
 
-        {/* Body */}
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+              Foto del producto
+            </label>
+            <UploadFoto
+              value={form.foto}
+              onChange={(url) => setForm((p) => ({ ...p, foto: url }))}
+              code={form.codigo || 'receta'}
+            />
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>
@@ -166,7 +177,6 @@ export default function ModalReceta({ receta, onClose, onGuardado }: Props) {
             />
           </div>
 
-          {/* Componentes */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
               <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
@@ -256,7 +266,6 @@ export default function ModalReceta({ receta, onClose, onGuardado }: Props) {
           )}
         </div>
 
-        {/* Footer */}
         <div style={{
           display: 'flex', justifyContent: 'flex-end', gap: '10px',
           padding: '16px 24px', borderTop: '1px solid var(--border)',
