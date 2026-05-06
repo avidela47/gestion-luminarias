@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Search, Pencil, Trash2, PackageX } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, PackageX, FileText } from 'lucide-react'
+import FichaReceta from './FichaReceta'
 import ModalReceta from './ModalReceta'
 
 export interface Receta {
@@ -22,6 +23,7 @@ export default function RecetasPage() {
   const [modalAbierto, setModalAbierto] = useState(false)
   const [recetaEditar, setRecetaEditar] = useState<Receta | null>(null)
   const [confirmarEliminar, setConfirmarEliminar] = useState<string | null>(null)
+  const [fichaReceta, setFichaReceta] = useState<Receta | null>(null)
 
   useEffect(() => {
     fetch('/api/recetas')
@@ -54,15 +56,10 @@ export default function RecetasPage() {
 
   return (
     <div style={{ padding: '32px', maxWidth: '1200px' }}>
-      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)' }}>
-            Recetas (BOM)
-          </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Composición de componentes por luminaria
-          </p>
+          <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)' }}>Recetas (BOM)</h1>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>Composición de componentes por luminaria</p>
         </div>
         <button
           onClick={() => { setRecetaEditar(null); setModalAbierto(true) }}
@@ -70,16 +67,13 @@ export default function RecetasPage() {
             display: 'flex', alignItems: 'center', gap: '8px',
             backgroundColor: 'var(--primary)', color: '#fff',
             border: 'none', borderRadius: '8px',
-            padding: '9px 16px', fontSize: '13px', fontWeight: 600,
-            cursor: 'pointer',
+            padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
           }}
         >
-          <Plus size={16} />
-          Nueva receta
+          <Plus size={16} /> Nueva receta
         </button>
       </div>
 
-      {/* Buscador */}
       <div style={{ position: 'relative', marginBottom: '16px', maxWidth: '360px' }}>
         <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
         <input
@@ -96,7 +90,6 @@ export default function RecetasPage() {
         />
       </div>
 
-      {/* Tabla */}
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando...</div>
@@ -143,6 +136,10 @@ export default function RecetasPage() {
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}>
                         <Pencil size={15} />
                       </button>
+                      <button onClick={() => setFichaReceta(r)} title="Ver ficha"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}>
+                        <FileText size={15} />
+                      </button>
                       <button onClick={() => setConfirmarEliminar(r.codigo)} title="Eliminar"
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: '4px' }}>
                         <Trash2 size={15} />
@@ -156,7 +153,6 @@ export default function RecetasPage() {
         )}
       </div>
 
-      {/* Modal receta */}
       {modalAbierto && (
         <ModalReceta
           receta={recetaEditar}
@@ -165,7 +161,6 @@ export default function RecetasPage() {
         />
       )}
 
-      {/* Modal confirmar eliminar */}
       {confirmarEliminar && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 200,
@@ -177,9 +172,7 @@ export default function RecetasPage() {
             padding: '28px', maxWidth: '380px', width: '100%',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
           }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-              Eliminar receta
-            </h3>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Eliminar receta</h3>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
               ¿Confirmás que querés eliminar la receta <b>{confirmarEliminar}</b>? Esta acción no se puede deshacer.
             </p>
@@ -203,6 +196,14 @@ export default function RecetasPage() {
           </div>
         </div>
       )}
+
+      {fichaReceta && (
+        <FichaReceta
+          receta={fichaReceta}
+          onClose={() => setFichaReceta(null)}
+        />
+      )}
+
     </div>
   )
 }
