@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { Componente } from './page'
+import UploadFoto from '@/components/UploadFoto'
 
 interface Props {
   componente: Componente | null
@@ -25,6 +26,7 @@ export default function ModalComponente({ componente, onClose, onGuardado }: Pro
     precio_unitario: componente?.precio_unitario ?? 0,
     ubicacion: componente?.ubicacion ?? '',
     notas: componente?.notas ?? '',
+    foto: componente?.foto ?? '',
   })
 
   const [guardando, setGuardando] = useState(false)
@@ -109,9 +111,21 @@ export default function ModalComponente({ componente, onClose, onGuardado }: Pro
 
         {/* Body */}
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          {/* Foto */}
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+              Foto
+            </label>
+            <UploadFoto
+              value={form.foto}
+              onChange={(url) => setForm((prev) => ({ ...prev, foto: url }))}
+              code={form.id_componente || 'componente'}
+            />
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {campo('Código *', 'id_componente', 'text', 'Ej: TORN-M4-15')}
-            {/* Unidad */}
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
                 Unidad

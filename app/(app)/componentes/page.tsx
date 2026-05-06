@@ -16,6 +16,7 @@ export interface Componente {
   ubicacion: string
   notas: string
   activo: boolean
+  foto: string
 }
 
 export default function ComponentesPage() {
