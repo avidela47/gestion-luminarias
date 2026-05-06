@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
+  const vpsUrl = process.env.UPLOAD_VPS_URL
+  const uploadsBase = process.env.NEXT_PUBLIC_UPLOADS_BASE
+
+  if (!vpsUrl || !uploadsBase) {
+    console.error('[upload] Variables de entorno faltantes:', { vpsUrl, uploadsBase })
+    return NextResponse.json({ ok: false, error: 'Configuración de servidor incompleta' }, { status: 500 })
+  }
+
   try {
     const formData = await req.formData()
     const file = formData.get('file')
@@ -13,27 +21,27 @@ export async function POST(req: NextRequest) {
     vpsForm.append('file', file)
 
     const code = formData.get('code')
-    if (code) vpsForm.append('code', code)
+    if (code) vpsForm.append('code', code.toString())
 
-    const vpsRes = await fetch(process.env.UPLOAD_VPS_URL!, {
+    const vpsRes = await fetch(vpsUrl, {
       method: 'POST',
       body: vpsForm,
     })
 
-    if (!vpsRes.ok) {
-      const err = await vpsRes.text()
-      return NextResponse.json({ ok: false, error: err }, { status: 502 })
-    }
-
     const data = await vpsRes.json()
+
+    if (!vpsRes.ok) {
+      console.error('[upload] VPS error:', data)
+      return NextResponse.json({ ok: false, error: data?.msg || 'Error en VPS' }, { status: 502 })
+    }
 
     return NextResponse.json({
       ok: true,
-      url: `${process.env.NEXT_PUBLIC_UPLOADS_BASE}/${data.fileName}`,
+      url: `${uploadsBase}/${data.fileName}`,
       fileName: data.fileName,
     })
   } catch (e) {
-    console.error('[upload] error:', e)
-    return NextResponse.json({ ok: false, error: 'Error subiendo archivo' }, { status: 500 })
+    console.error('[upload] excepción:', e)
+    return NextResponse.json({ ok: false, error: String(e) }, { status: 500 })
   }
 }
