@@ -4,10 +4,10 @@ import Presupuesto from '@/models/Presupuesto'
 
 async function generarNumero(): Promise<string> {
   const ultimo = await Presupuesto.findOne().sort({ createdAt: -1 })
-  if (!ultimo) return '0000-00000001'
+  if (!ultimo) return '0001-00010001'
   const partes = ultimo.numero.split('-')
   const num = parseInt(partes[1]) + 1
-  return `0000-${String(num).padStart(8, '0')}`
+  return `0001-${String(num).padStart(8, '0')}`
 }
 
 export async function GET() {

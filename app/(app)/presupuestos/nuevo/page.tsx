@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, ArrowLeft } from 'lucide-react'
+import { Plus, Trash2, ArrowLeft, Search } from 'lucide-react'
 import { EMPRESA } from '@/lib/constants'
 
 interface Cliente {
@@ -26,9 +26,17 @@ interface Linea {
   precio_total: number
 }
 
+interface ProductoCatalogo {
+  codigo: string
+  descripcion: string
+  precio: number
+  tipo: string
+}
+
 export default function NuevoPresupuestoPage() {
   const router = useRouter()
   const [clientes, setClientes] = useState<Cliente[]>([])
+  const [catalogo, setCatalogo] = useState<ProductoCatalogo[]>([])
   const [clienteSeleccionado, setClienteSeleccionado] = useState<Cliente | null>(null)
   const [atencion, setAtencion] = useState('')
   const [vendedor, setVendedor] = useState(EMPRESA.vendedor_default)
@@ -39,11 +47,35 @@ export default function NuevoPresupuestoPage() {
   const [lineas, setLineas] = useState<Linea[]>([])
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
+  const [busquedaCatalogo, setBusquedaCatalogo] = useState('')
+  const [mostrarCatalogo, setMostrarCatalogo] = useState(false)
 
   useEffect(() => {
-    fetch('/api/clientes')
-      .then((r) => r.json())
-      .then((data) => { if (data.ok) setClientes(data.data) })
+    Promise.all([
+      fetch('/api/clientes').then((r) => r.json()),
+      fetch('/api/sensores').then((r) => r.json()),
+      fetch('/api/luminarias-comerciales').then((r) => r.json()),
+      fetch('/api/productos').then((r) => r.json()),
+    ]).then(([clientesData, sensoresData, comercialesData, fabricadasData]) => {
+      if (clientesData.ok) setClientes(clientesData.data)
+      const items: ProductoCatalogo[] = []
+      if (sensoresData.ok) {
+        sensoresData.data.forEach((s: { codigo: string; descripcion: string; precio: number; tipo: string }) => {
+          items.push({ codigo: s.codigo, descripcion: s.descripcion, precio: s.precio, tipo: s.tipo })
+        })
+      }
+      if (comercialesData.ok) {
+        comercialesData.data.forEach((l: { codigo: string; descripcion: string; precio: number }) => {
+          items.push({ codigo: l.codigo, descripcion: l.descripcion, precio: l.precio, tipo: 'luminaria_comercial' })
+        })
+      }
+      if (fabricadasData.ok) {
+        fabricadasData.data.forEach((l: { codigo_luminaria: string; descripcion: string; precio: number }) => {
+          items.push({ codigo: l.codigo_luminaria, descripcion: l.descripcion, precio: l.precio, tipo: 'luminaria_fabricada' })
+        })
+      }
+      setCatalogo(items.sort((a, b) => a.codigo.localeCompare(b.codigo)))
+    })
   }, [])
 
   const seleccionarCliente = (id: string) => {
@@ -58,6 +90,19 @@ export default function NuevoPresupuestoPage() {
     }])
   }
 
+  const agregarDesdeCatalogo = (producto: ProductoCatalogo) => {
+    setLineas((prev) => [...prev, {
+      codigo: producto.codigo,
+      descripcion: producto.descripcion,
+      cantidad: 1,
+      bonificacion: 0,
+      precio_unitario: producto.precio,
+      precio_total: producto.precio,
+    }])
+    setMostrarCatalogo(false)
+    setBusquedaCatalogo('')
+  }
+
   const actualizarLinea = (i: number, campo: string, valor: string | number) => {
     setLineas((prev) => prev.map((l, idx) => {
       if (idx !== i) return l
@@ -67,16 +112,35 @@ export default function NuevoPresupuestoPage() {
     }))
   }
 
-  const quitarLinea = (i: number) => {
-    setLineas((prev) => prev.filter((_, idx) => idx !== i))
-  }
+  const quitarLinea = (i: number) => setLineas((prev) => prev.filter((_, idx) => idx !== i))
 
   const subtotal = lineas.reduce((acc, l) => acc + l.precio_total, 0)
-  const esInscripto = clienteSeleccionado?.condicion_iva === 'Responsable Inscripto' ||
-    clienteSeleccionado?.condicion_iva === 'Responsable Inscripto 10' ||
-    clienteSeleccionado?.condicion_iva === 'Responsable Inscripto M'
+  const esInscripto = clienteSeleccionado?.condicion_iva?.includes('Responsable Inscripto')
   const iva = esInscripto ? Math.round(subtotal * 0.21 * 100) / 100 : 0
   const total = Math.round((subtotal + iva) * 100) / 100
+
+  const catalogoFiltrado = catalogo.filter((p) =>
+    p.codigo.toLowerCase().includes(busquedaCatalogo.toLowerCase()) ||
+    p.descripcion.toLowerCase().includes(busquedaCatalogo.toLowerCase())
+  ).slice(0, 20)
+
+  const tipoBadge = (tipo: string) => {
+    const map: Record<string, { label: string; color: string }> = {
+      sensor: { label: 'SENSOR', color: 'var(--info)' },
+      fuente: { label: 'FUENTE', color: 'var(--warning)' },
+      luminaria_comercial: { label: 'LUM. COMERCIAL', color: 'var(--success)' },
+      luminaria_fabricada: { label: 'LUM. FABRICADA', color: 'var(--primary)' },
+    }
+    const cfg = map[tipo] ?? { label: tipo.toUpperCase(), color: 'var(--text-muted)' }
+    return (
+      <span style={{
+        fontSize: '10px', fontWeight: 600, padding: '1px 6px', borderRadius: '4px',
+        backgroundColor: cfg.color + '18', color: cfg.color,
+      }}>
+        {cfg.label}
+      </span>
+    )
+  }
 
   const guardar = async (estado: string) => {
     setError('')
@@ -90,8 +154,7 @@ export default function NuevoPresupuestoPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        vendedor,
-        validez_dias: validez,
+        vendedor, validez_dias: validez,
         id_cliente: clienteSeleccionado.id_cliente,
         razon_social: clienteSeleccionado.razon_social || clienteSeleccionado.nombre,
         cuit: clienteSeleccionado.cuit,
@@ -101,15 +164,8 @@ export default function NuevoPresupuestoPage() {
         email: clienteSeleccionado.email,
         atencion,
         condicion_iva: clienteSeleccionado.condicion_iva,
-        lineas,
-        moneda: 'U$S',
-        subtotal,
-        iva,
-        total,
-        forma_pago: formaPago,
-        plazo_entrega: plazoEntrega,
-        comentario,
-        estado,
+        lineas, moneda: 'U$S', subtotal, iva, total,
+        forma_pago: formaPago, plazo_entrega: plazoEntrega, comentario, estado,
       }),
     })
 
@@ -129,7 +185,6 @@ export default function NuevoPresupuestoPage() {
 
   return (
     <div style={{ padding: '32px', maxWidth: '1000px' }}>
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <button onClick={() => router.push('/presupuestos')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}>
@@ -149,10 +204,7 @@ export default function NuevoPresupuestoPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
           <div>
             <label style={labelStyle}>CLIENTE *</label>
-            <select
-              onChange={(e) => seleccionarCliente(e.target.value)}
-              style={inputStyle}
-            >
+            <select onChange={(e) => seleccionarCliente(e.target.value)} style={inputStyle}>
               <option value="">Seleccionar cliente...</option>
               {clientes.map((c) => (
                 <option key={c.id_cliente} value={c.id_cliente}>
@@ -167,7 +219,6 @@ export default function NuevoPresupuestoPage() {
               placeholder="Persona de contacto" style={inputStyle} />
           </div>
         </div>
-
         {clienteSeleccionado && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', fontSize: '13px' }}>
             <div><span style={{ color: 'var(--text-muted)' }}>CUIT: </span><b>{clienteSeleccionado.cuit || '—'}</b></div>
@@ -180,7 +231,7 @@ export default function NuevoPresupuestoPage() {
         )}
       </div>
 
-      {/* Encabezado */}
+      {/* Condiciones */}
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' }}>
         <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>Condiciones</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
@@ -208,19 +259,30 @@ export default function NuevoPresupuestoPage() {
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Detalle</h2>
-          <button onClick={agregarLinea}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '13px', fontWeight: 600, color: 'var(--primary)',
-              background: 'none', border: 'none', cursor: 'pointer',
-            }}>
-            <Plus size={15} /> Agregar ítem
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => setMostrarCatalogo(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                fontSize: '13px', fontWeight: 600, color: 'var(--secondary)',
+                background: 'none', border: '1px solid var(--border)', borderRadius: '6px',
+                padding: '6px 12px', cursor: 'pointer',
+              }}>
+              <Search size={14} /> Buscar en catálogo
+            </button>
+            <button onClick={agregarLinea}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                fontSize: '13px', fontWeight: 600, color: 'var(--primary)',
+                background: 'none', border: 'none', cursor: 'pointer',
+              }}>
+              <Plus size={15} /> Agregar ítem manual
+            </button>
+          </div>
         </div>
 
         {lineas.length === 0 ? (
           <div style={{ padding: '24px', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: '8px' }}>
-            No hay ítems. Hacé clic en Agregar ítem para empezar.
+            Buscá en el catálogo o agregá ítems manualmente.
           </div>
         ) : (
           <>
@@ -234,7 +296,7 @@ export default function NuevoPresupuestoPage() {
                 <input type="text" value={l.codigo} onChange={(e) => actualizarLinea(i, 'codigo', e.target.value)}
                   placeholder="Código" style={{ ...inputStyle, fontSize: '12px' }} />
                 <input type="text" value={l.descripcion} onChange={(e) => actualizarLinea(i, 'descripcion', e.target.value)}
-                  placeholder="Descripción del producto" style={{ ...inputStyle, fontSize: '12px' }} />
+                  placeholder="Descripción" style={{ ...inputStyle, fontSize: '12px' }} />
                 <input type="number" min={1} value={l.cantidad} onChange={(e) => actualizarLinea(i, 'cantidad', Number(e.target.value))}
                   style={{ ...inputStyle, fontSize: '12px' }} />
                 <input type="number" min={0} max={100} value={l.bonificacion} onChange={(e) => actualizarLinea(i, 'bonificacion', Number(e.target.value))}
@@ -253,7 +315,6 @@ export default function NuevoPresupuestoPage() {
           </>
         )}
 
-        {/* Totales */}
         {lineas.length > 0 && (
           <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
             <div style={{ width: '280px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
@@ -291,7 +352,6 @@ export default function NuevoPresupuestoPage() {
         </div>
       )}
 
-      {/* Acciones */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
         <button onClick={() => router.push('/presupuestos')}
           style={{
@@ -318,6 +378,86 @@ export default function NuevoPresupuestoPage() {
           {guardando ? 'Guardando...' : 'Guardar y enviar'}
         </button>
       </div>
+
+      {/* Modal catálogo */}
+      {mostrarCatalogo && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            backgroundColor: 'var(--card-bg)', borderRadius: '12px',
+            width: '100%', maxWidth: '600px', maxHeight: '80vh',
+            display: 'flex', flexDirection: 'column',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>
+                Buscar en catálogo
+              </h3>
+              <div style={{ position: 'relative' }}>
+                <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Código o descripción..."
+                  value={busquedaCatalogo}
+                  onChange={(e) => setBusquedaCatalogo(e.target.value)}
+                  style={{
+                    width: '100%', padding: '8px 12px 8px 32px',
+                    border: '1px solid var(--border)', borderRadius: '8px',
+                    fontSize: '13px', backgroundColor: 'var(--input-bg)',
+                    color: 'var(--text-primary)', outline: 'none',
+                  }}
+                />
+              </div>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {catalogoFiltrado.length === 0 ? (
+                <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                  {busquedaCatalogo ? 'No se encontraron productos' : 'Escribí para buscar'}
+                </div>
+              ) : (
+                catalogoFiltrado.map((p) => (
+                  <div
+                    key={p.codigo}
+                    onClick={() => agregarDesdeCatalogo(p)}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '12px 24px', borderBottom: '1px solid var(--border)',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--sidebar-hover)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                        <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--primary)' }}>{p.codigo}</span>
+                        {tipoBadge(p.tipo)}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{p.descripcion}</div>
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', marginLeft: '16px' }}>
+                      {p.precio > 0 ? `U$S ${p.precio.toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : 'Sin precio'}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setMostrarCatalogo(false); setBusquedaCatalogo('') }}
+                style={{
+                  padding: '8px 16px', borderRadius: '6px', fontSize: '13px',
+                  border: '1px solid var(--border)', backgroundColor: 'transparent',
+                  color: 'var(--text-secondary)', cursor: 'pointer',
+                }}>
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
