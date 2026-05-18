@@ -162,10 +162,10 @@ export default function VerPresupuestoPage() {
                   <td style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px' }}>
                     {l.bonificacion > 0 ? `${l.bonificacion}%` : '—'}
                   </td>
-                  <td style={{ padding: '10px 12px', textAlign: 'right', fontSize: '12px' }}>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', fontSize: '12px', whiteSpace: 'nowrap' }}>
                     {presupuesto.moneda} {l.precio_unitario.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                   </td>
-                  <td style={{ padding: '10px 12px', textAlign: 'right', fontSize: '12px', fontWeight: 600 }}>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                     {presupuesto.moneda} {l.precio_total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                   </td>
                 </tr>
