@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import {
   LayoutDashboard, Package, Cpu, Factory, ArrowLeftRight,
-  Users, Truck, BoxSelect, FileText, Receipt,
-  BarChart3, ChevronRight, ClipboardList, LogOut,
+  Users, Truck, FileText, Receipt, BarChart3, ChevronRight,
+  ClipboardList, LogOut, Zap, Lightbulb,
 } from 'lucide-react'
 
 const menuItems = [
@@ -22,11 +22,17 @@ const menuItems = [
     ],
   },
   {
+    grupo: 'STOCK',
+    items: [
+      { label: 'Sensores y Fuentes', href: '/sensores', icon: Zap },
+      { label: 'Luminarias', href: '/luminarias', icon: Lightbulb },
+    ],
+  },
+  {
     grupo: 'COMERCIAL',
     items: [
       { label: 'Clientes', href: '/clientes', icon: Users },
       { label: 'Proveedores', href: '/proveedores', icon: Truck },
-      { label: 'Producto Terminado', href: '/productos', icon: BoxSelect },
       { label: 'Presupuestos', href: '/presupuestos', icon: FileText },
       { label: 'Órdenes de Trabajo', href: '/ordenes', icon: ClipboardList },
       { label: 'Recibos', href: '/recibos', icon: Receipt },
@@ -162,15 +168,9 @@ export default function Sidebar() {
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
           style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '11px',
-            color: 'var(--text-muted)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '4px',
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: '11px', color: 'var(--text-muted)',
+            display: 'flex', alignItems: 'center', gap: '4px', padding: '4px',
           }}
           title="Cerrar sesión"
         >

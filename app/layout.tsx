@@ -5,7 +5,7 @@ import './globals.css'
 const geist = Geist({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'ITELSA — Smart Lighting',
+  title: 'ITELSA SAS | Smart Lighting',
   description: 'Sistema de gestión de stock y producción',
 }
 
