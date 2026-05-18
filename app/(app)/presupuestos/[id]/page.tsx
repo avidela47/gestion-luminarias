@@ -175,7 +175,7 @@ export default function VerPresupuestoPage() {
 
           {/* Totales */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
-            <div style={{ width: '280px' }}>
+            <div style={{ width: '280px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e2e8f0', fontSize: '13px' }}>
                 <span style={{ color: '#64748b' }}>T. Neto:</span>
                 <span style={{ fontWeight: 600 }}>{presupuesto.moneda} {presupuesto.subtotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
