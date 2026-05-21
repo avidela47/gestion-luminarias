@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Printer, Plus, CheckCircle, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Printer, Plus, CheckCircle, AlertTriangle, Pencil, Trash2 } from 'lucide-react'
 import { EMPRESA } from '@/lib/constants'
 
 interface Pago {
@@ -31,6 +31,12 @@ interface Recibo {
   pagos: Pago[]
   notas: string
 }
+
+interface LineaEditar {
+  descripcion: string
+  monto_usd: number
+}
+
 const formasPago = ['Efectivo', 'Transferencia', 'Cheque', 'Depósito']
 
 export default function VerReciboPage() {
@@ -39,9 +45,13 @@ export default function VerReciboPage() {
   const [recibo, setRecibo] = useState<Recibo | null>(null)
   const [loading, setLoading] = useState(true)
   const [modalPago, setModalPago] = useState(false)
+  const [modalEditar, setModalEditar] = useState(false)
   const [formPago, setFormPago] = useState({ monto_usd: 0, tipo_cambio: 0, forma_pago: 'Transferencia', notas: '' })
+  const [formEditar, setFormEditar] = useState({ concepto: '', lineas: [] as LineaEditar[], notas: '' })
   const [guardandoPago, setGuardandoPago] = useState(false)
+  const [guardandoEditar, setGuardandoEditar] = useState(false)
   const [error, setError] = useState('')
+  const [errorEditar, setErrorEditar] = useState('')
   const [resultado, setResultado] = useState<{ ok: boolean; mensaje: string } | null>(null)
 
   const cargarRecibo = () => {
@@ -61,6 +71,43 @@ export default function VerReciboPage() {
         setLoading(false)
       })
   }, [id])
+
+  const abrirEditar = () => {
+    if (!recibo) return
+    setFormEditar({
+      concepto: recibo.concepto,
+      lineas: recibo.lineas_detalle?.length ? recibo.lineas_detalle : [{ descripcion: '', monto_usd: 0 }],
+      notas: recibo.notas,
+    })
+    setModalEditar(true)
+  }
+
+  const guardarEditar = async () => {
+    setErrorEditar('')
+    if (!formEditar.concepto.trim()) return setErrorEditar('El concepto es obligatorio')
+    const invalidas = formEditar.lineas.some((l) => !l.descripcion.trim())
+    if (invalidas) return setErrorEditar('Completá la descripción en todas las líneas')
+
+    const totalUsd = formEditar.lineas.reduce((acc, l) => acc + Number(l.monto_usd), 0)
+
+    setGuardandoEditar(true)
+    const res = await fetch(`/api/recibos/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        concepto: formEditar.concepto,
+        lineas_detalle: formEditar.lineas,
+        total_usd: totalUsd,
+        saldo_usd: totalUsd - (recibo?.total_pagado_usd ?? 0),
+        notas: formEditar.notas,
+      }),
+    })
+    const data = await res.json()
+    setGuardandoEditar(false)
+    if (!data.ok) return setErrorEditar(data.error || 'Error al guardar')
+    setModalEditar(false)
+    cargarRecibo()
+  }
 
   const registrarPago = async () => {
     setError('')
@@ -105,6 +152,8 @@ export default function VerReciboPage() {
 
   const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' } as const
 
+  const totalEditar = formEditar.lineas.reduce((acc, l) => acc + Number(l.monto_usd), 0)
+
   return (
     <>
       {/* Barra acciones */}
@@ -128,6 +177,15 @@ export default function VerReciboPage() {
         }}>
           {recibo.estado}
         </span>
+        <button onClick={abrirEditar}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            backgroundColor: 'transparent', color: 'var(--text-secondary)',
+            border: '1px solid var(--border)', borderRadius: '8px',
+            padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+          }}>
+          <Pencil size={15} /> Editar
+        </button>
         <button onClick={() => window.print()}
           style={{
             display: 'flex', alignItems: 'center', gap: '8px',
@@ -187,13 +245,14 @@ export default function VerReciboPage() {
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '6px', letterSpacing: '1px' }}>REFERENCIA</div>
               {recibo.numero_presupuesto && <div style={{ fontSize: '12px' }}>Presupuesto: <b>{recibo.numero_presupuesto}</b></div>}
               {recibo.numero_orden && <div style={{ fontSize: '12px' }}>Orden de trabajo: <b>{recibo.numero_orden}</b></div>}
+              {!recibo.numero_presupuesto && !recibo.numero_orden && <div style={{ fontSize: '12px', color: '#64748b' }}>—</div>}
             </div>
           </div>
 
-          {/* Concepto */}
+          {/* Concepto y detalle */}
           <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '16px', marginBottom: '24px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '6px', letterSpacing: '1px' }}>CONCEPTO</div>
-            <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: recibo.lineas_detalle?.length ? '12px' : 0 }}>{recibo.concepto}</div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '8px', letterSpacing: '1px' }}>CONCEPTO</div>
+            <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: recibo.lineas_detalle?.length ? '12px' : 0 }}>{recibo.concepto}</div>
             {recibo.lineas_detalle?.length > 0 && (
               <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '8px' }}>
                 <thead>
@@ -238,7 +297,7 @@ export default function VerReciboPage() {
 
           {/* Historial de pagos */}
           {recibo.pagos.length > 0 && (
-            <div>
+            <div style={{ marginBottom: '24px' }}>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '12px', letterSpacing: '1px' }}>
                 HISTORIAL DE PAGOS
               </div>
@@ -275,8 +334,15 @@ export default function VerReciboPage() {
             </div>
           )}
 
+          {/* Observaciones */}
+          {recibo.notas && (
+            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px', marginBottom: '16px', fontSize: '12px', color: '#64748b' }}>
+              <b>OBSERVACIONES:</b> {recibo.notas}
+            </div>
+          )}
+
           {/* Firma */}
-          <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between' }}>
             <div style={{ fontSize: '12px', color: '#64748b' }}>
               Estado: <b>{recibo.estado}</b>
             </div>
@@ -300,6 +366,94 @@ export default function VerReciboPage() {
           </div>
         )}
       </div>
+
+      {/* Modal editar */}
+      {modalEditar && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            backgroundColor: 'var(--card-bg)', borderRadius: '12px',
+            padding: '28px', maxWidth: '560px', width: '100%', maxHeight: '90vh', overflowY: 'auto',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '20px' }}>
+              Editar recibo {recibo.numero}
+            </h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={labelStyle}>CONCEPTO *</label>
+                <input type="text" value={formEditar.concepto}
+                  onChange={(e) => setFormEditar((p) => ({ ...p, concepto: e.target.value }))}
+                  style={inputStyle} />
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={labelStyle}>DETALLE</label>
+                  <button onClick={() => setFormEditar((p) => ({ ...p, lineas: [...p.lineas, { descripcion: '', monto_usd: 0 }] }))}
+                    style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    <Plus size={13} /> Agregar línea
+                  </button>
+                </div>
+                {formEditar.lineas.map((l, i) => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+                    <input type="text" value={l.descripcion}
+                      onChange={(e) => setFormEditar((p) => ({ ...p, lineas: p.lineas.map((x, idx) => idx === i ? { ...x, descripcion: e.target.value } : x) }))}
+                      placeholder="Descripción" style={{ ...inputStyle, fontSize: '12px' }} />
+                    <input type="number" min={0} step={0.01} value={l.monto_usd}
+                      onChange={(e) => setFormEditar((p) => ({ ...p, lineas: p.lineas.map((x, idx) => idx === i ? { ...x, monto_usd: Number(e.target.value) } : x) }))}
+                      style={{ ...inputStyle, fontSize: '12px' }} />
+                    <button onClick={() => setFormEditar((p) => ({ ...p, lineas: p.lineas.filter((_, idx) => idx !== i) }))}
+                      disabled={formEditar.lineas.length === 1}
+                      style={{ background: 'none', border: 'none', cursor: formEditar.lineas.length === 1 ? 'not-allowed' : 'pointer', color: 'var(--danger)', opacity: formEditar.lineas.length === 1 ? 0.3 : 1 }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+                <div style={{ textAlign: 'right', fontSize: '13px', fontWeight: 700, paddingTop: '8px', borderTop: '1px solid var(--border)' }}>
+                  Total: U$S {totalEditar.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                </div>
+              </div>
+
+              <div>
+                <label style={labelStyle}>OBSERVACIONES</label>
+                <textarea value={formEditar.notas}
+                  onChange={(e) => setFormEditar((p) => ({ ...p, notas: e.target.value }))}
+                  rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
+              </div>
+
+              {errorEditar && (
+                <div style={{ backgroundColor: 'var(--danger-bg)', color: 'var(--danger)', padding: '10px 14px', borderRadius: '6px', fontSize: '13px' }}>
+                  {errorEditar}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              <button onClick={() => setModalEditar(false)}
+                style={{
+                  padding: '8px 16px', borderRadius: '6px', fontSize: '13px',
+                  border: '1px solid var(--border)', backgroundColor: 'transparent',
+                  color: 'var(--text-secondary)', cursor: 'pointer',
+                }}>
+                Cancelar
+              </button>
+              <button onClick={guardarEditar} disabled={guardandoEditar}
+                style={{
+                  padding: '8px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+                  border: 'none', backgroundColor: 'var(--primary)', color: '#fff',
+                  cursor: guardandoEditar ? 'not-allowed' : 'pointer', opacity: guardandoEditar ? 0.7 : 1,
+                }}>
+                {guardandoEditar ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal registrar pago */}
       {modalPago && (
@@ -347,8 +501,7 @@ export default function VerReciboPage() {
 
               <div>
                 <label style={labelStyle}>FORMA DE PAGO *</label>
-                <select
-                  value={formPago.forma_pago}
+                <select value={formPago.forma_pago}
                   onChange={(e) => setFormPago((p) => ({ ...p, forma_pago: e.target.value }))}
                   style={inputStyle}>
                   {formasPago.map((f) => <option key={f} value={f}>{f}</option>)}
@@ -357,8 +510,7 @@ export default function VerReciboPage() {
 
               <div>
                 <label style={labelStyle}>NOTAS</label>
-                <input type="text"
-                  value={formPago.notas}
+                <input type="text" value={formPago.notas}
                   onChange={(e) => setFormPago((p) => ({ ...p, notas: e.target.value }))}
                   placeholder="Observaciones del pago"
                   style={inputStyle} />
