@@ -208,9 +208,9 @@ export default function VerReciboPage() {
         )}
       </div>
 
-      {/* Documento */}
-      <div style={{ padding: '32px', maxWidth: '900px', margin: '0 auto' }}>
-        <div style={{
+     {/* Documento */}
+      <div id="contenedor-imprimible" style={{ padding: '32px', maxWidth: '900px', margin: '0 auto' }}>
+        <div id="documento-imprimible" style={{
           backgroundColor: '#fff', border: '1px solid var(--border)',
           borderRadius: '8px', padding: '40px',
           fontFamily: 'Arial, sans-serif', fontSize: '13px', color: '#1a2332',
@@ -547,13 +547,27 @@ export default function VerReciboPage() {
 
       <style>{`
         @media print {
-            .no-print { display: none !important; }
-            aside { display: none !important; }
-            main { margin-left: 0 !important; }
-            body { background: white !important; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            @page { size: A4; margin: 15mm 20mm; }
+          .no-print { display: none !important; }
+          aside { display: none !important; }
+          main { margin-left: 0 !important; padding: 0 !important; }
+          body { background: white !important; margin: 0 !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          @page { size: A4 portrait; margin: 15mm; }
+          #documento-imprimible {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
           }
+          #contenedor-imprimible {
+            padding: 0 !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+          }
+        }
       `}</style>
     </>
   )
