@@ -547,12 +547,13 @@ export default function VerReciboPage() {
 
       <style>{`
         @media print {
-          .no-print { display: none !important; }
-          aside { display: none !important; }
-          main { margin-left: 0 !important; }
-          body { background: white !important; }
-          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        }
+            .no-print { display: none !important; }
+            aside { display: none !important; }
+            main { margin-left: 0 !important; }
+            body { background: white !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            @page { size: A4; margin: 10mm; }
+          }
       `}</style>
     </>
   )
