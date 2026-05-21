@@ -552,7 +552,7 @@ export default function VerReciboPage() {
             main { margin-left: 0 !important; }
             body { background: white !important; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            @page { size: A4; margin: 35mm 40mm; }
+            @page { size: A4; margin: 55mm 60mm; }
           }
       `}</style>
     </>
