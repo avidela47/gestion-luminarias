@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 
 interface Cliente {
   id_cliente: string
@@ -25,6 +25,11 @@ interface OrdenTrabajo {
   id_cliente: string
 }
 
+interface LineaRecibo {
+  descripcion: string
+  monto_usd: number
+}
+
 export default function NuevoReciboPage() {
   const router = useRouter()
   const [clientes, setClientes] = useState<Cliente[]>([])
@@ -37,7 +42,7 @@ export default function NuevoReciboPage() {
   const [ordenId, setOrdenId] = useState('')
   const [numeroOrden, setNumeroOrden] = useState('')
   const [concepto, setConcepto] = useState('')
-  const [totalUsd, setTotalUsd] = useState<number>(0)
+  const [lineas, setLineas] = useState<LineaRecibo[]>([{ descripcion: '', monto_usd: 0 }])
   const [notas, setNotas] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
@@ -49,7 +54,7 @@ export default function NuevoReciboPage() {
       fetch('/api/ordenes').then((r) => r.json()),
     ]).then(([c, p, o]) => {
       if (c.ok) setClientes(c.data)
-      if (p.ok) setPresupuestos(p.data.filter((x: Presupuesto & { estado: string }) => x.estado === 'Aprobado'))
+      if (p.ok) setPresupuestos(p.data.filter((x: Presupuesto & { estado: string }) => x.estado === 'Aceptado'))
       if (o.ok) setOrdenes(o.data)
     })
   }, [])
@@ -62,27 +67,45 @@ export default function NuevoReciboPage() {
     setNumeroPresupuesto('')
     setOrdenId('')
     setNumeroOrden('')
-    setTotalUsd(0)
+    setConcepto('')
+    setLineas([{ descripcion: '', monto_usd: 0 }])
   }
 
   const seleccionarPresupuesto = (id: string) => {
     const p = presupuestos.find((p) => p._id === id)
     setPresupuestoId(id)
     setNumeroPresupuesto(p?.numero || '')
-    if (p) setTotalUsd(p.total)
+    if (p) {
+      setConcepto(`Según presupuesto ${p.numero}`)
+      setLineas([{ descripcion: `Presupuesto ${p.numero}`, monto_usd: p.total }])
+    } else {
+      setConcepto('')
+      setLineas([{ descripcion: '', monto_usd: 0 }])
+    }
   }
 
   const seleccionarOrden = (id: string) => {
     const o = ordenes.find((o) => o._id === id)
     setOrdenId(id)
     setNumeroOrden(o?.numero || '')
+    if (o) setConcepto((prev) => prev || `Según OT ${o.numero}`)
   }
+
+  const agregarLinea = () => setLineas((prev) => [...prev, { descripcion: '', monto_usd: 0 }])
+  const quitarLinea = (i: number) => setLineas((prev) => prev.filter((_, idx) => idx !== i))
+  const actualizarLinea = (i: number, campo: keyof LineaRecibo, valor: string | number) => {
+    setLineas((prev) => prev.map((l, idx) => idx === i ? { ...l, [campo]: valor } : l))
+  }
+
+  const totalUsd = lineas.reduce((acc, l) => acc + (Number(l.monto_usd) || 0), 0)
 
   const guardar = async () => {
     setError('')
     if (!clienteId) return setError('Seleccioná un cliente')
-    if (!totalUsd || totalUsd <= 0) return setError('El total debe ser mayor a 0')
     if (!concepto.trim()) return setError('El concepto es obligatorio')
+    if (totalUsd <= 0) return setError('El total debe ser mayor a 0')
+    const invalidas = lineas.some((l) => !l.descripcion.trim())
+    if (invalidas) return setError('Completá la descripción en todas las líneas')
 
     setGuardando(true)
     const res = await fetch('/api/recibos', {
@@ -96,6 +119,7 @@ export default function NuevoReciboPage() {
         id_orden: ordenId,
         numero_orden: numeroOrden,
         concepto,
+        lineas_detalle: lineas,
         total_usd: totalUsd,
         notas,
       }),
@@ -115,13 +139,8 @@ export default function NuevoReciboPage() {
     color: 'var(--text-primary)', outline: 'none',
   } as const
 
-  const presupuestosFiltrados = clienteId
-    ? presupuestos.filter((p) => p.id_cliente === clienteId)
-    : presupuestos
-
-  const ordenesFiltradas = clienteId
-    ? ordenes.filter((o) => o.id_cliente === clienteId)
-    : ordenes
+  const presupuestosFiltrados = clienteId ? presupuestos.filter((p) => p.id_cliente === clienteId) : presupuestos
+  const ordenesFiltradas = clienteId ? ordenes.filter((o) => o.id_cliente === clienteId) : ordenes
 
   return (
     <div style={{ padding: '32px', maxWidth: '700px' }}>
@@ -132,15 +151,12 @@ export default function NuevoReciboPage() {
         </button>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)' }}>Nuevo recibo</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            El número se asigna automáticamente
-          </p>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>El número se asigna automáticamente</p>
         </div>
       </div>
 
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-        {/* Cliente */}
         <div>
           <label style={labelStyle}>CLIENTE *</label>
           <select value={clienteId} onChange={(e) => seleccionarCliente(e.target.value)} style={inputStyle}>
@@ -151,7 +167,6 @@ export default function NuevoReciboPage() {
           </select>
         </div>
 
-        {/* Presupuesto y OT */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <div>
             <label style={labelStyle}>PRESUPUESTO (opcional)</label>
@@ -173,47 +188,62 @@ export default function NuevoReciboPage() {
           </div>
         </div>
 
-        {/* Concepto y total */}
         <div>
           <label style={labelStyle}>CONCEPTO *</label>
-          <input
-            type="text"
-            value={concepto}
-            onChange={(e) => setConcepto(e.target.value)}
-            placeholder="Ej: Luminarias SYP323 según presupuesto 0000-00000001"
-            style={inputStyle}
-          />
+          <input type="text" value={concepto} onChange={(e) => setConcepto(e.target.value)}
+            placeholder="Ej: Luminarias SYP323 según presupuesto 0001-00010001"
+            style={inputStyle} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <div>
-            <label style={labelStyle}>TOTAL U$S *</label>
-            <input
-              type="number"
-              min={0}
-              step={0.01}
-              value={totalUsd}
-              onChange={(e) => setTotalUsd(Number(e.target.value))}
-              style={inputStyle}
-            />
+        {/* Líneas de detalle */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <label style={labelStyle}>DETALLE</label>
+            <button onClick={agregarLinea}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '4px',
+                fontSize: '12px', fontWeight: 600, color: 'var(--primary)',
+                background: 'none', border: 'none', cursor: 'pointer',
+              }}>
+              <Plus size={13} /> Agregar línea
+            </button>
           </div>
-          <div>
-            <label style={labelStyle}>NOTAS</label>
-            <input
-              type="text"
-              value={notas}
-              onChange={(e) => setNotas(e.target.value)}
-              placeholder="Observaciones"
-              style={inputStyle}
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 110px 32px', gap: '6px', marginBottom: '6px' }}>
+            {['#', 'Descripción', 'Monto U$S', ''].map((h) => (
+              <div key={h} style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>{h}</div>
+            ))}
           </div>
+          {lineas.map((l, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '120px 1fr 110px 32px', gap: '6px', marginBottom: '6px', alignItems: 'center' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '8px 0' }}>Ítem {i + 1}</div>
+              <input type="text" value={l.descripcion}
+                onChange={(e) => actualizarLinea(i, 'descripcion', e.target.value)}
+                placeholder="Descripción" style={{ ...inputStyle, fontSize: '12px' }} />
+              <input type="number" min={0} step={0.01} value={l.monto_usd}
+                onChange={(e) => actualizarLinea(i, 'monto_usd', Number(e.target.value))}
+                style={{ ...inputStyle, fontSize: '12px' }} />
+              <button onClick={() => quitarLinea(i)} disabled={lineas.length === 1}
+                style={{ background: 'none', border: 'none', cursor: lineas.length === 1 ? 'not-allowed' : 'pointer', color: 'var(--danger)', opacity: lineas.length === 1 ? 0.3 : 1, padding: '4px' }}>
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '8px', borderTop: '1px solid var(--border)', marginTop: '4px' }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              Total: U$S {totalUsd.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label style={labelStyle}>OBSERVACIONES</label>
+          <textarea value={notas} onChange={(e) => setNotas(e.target.value)}
+            placeholder="Observaciones internas o para el cliente"
+            rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
         </div>
 
         {error && (
-          <div style={{
-            backgroundColor: 'var(--danger-bg)', color: 'var(--danger)',
-            padding: '10px 14px', borderRadius: '6px', fontSize: '13px',
-          }}>
+          <div style={{ backgroundColor: 'var(--danger-bg)', color: 'var(--danger)', padding: '10px 14px', borderRadius: '6px', fontSize: '13px' }}>
             {error}
           </div>
         )}

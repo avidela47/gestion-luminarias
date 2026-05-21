@@ -9,6 +9,11 @@ export interface IPago {
   notas: string
 }
 
+export interface ILineaRecibo {
+  descripcion: string
+  monto_usd: number
+}
+
 export interface IRecibo extends Document {
   numero: string
   fecha: Date
@@ -19,6 +24,7 @@ export interface IRecibo extends Document {
   id_orden: string
   numero_orden: string
   concepto: string
+  lineas_detalle: ILineaRecibo[]
   total_usd: number
   pagos: IPago[]
   total_pagado_usd: number
@@ -41,6 +47,14 @@ const PagoSchema = new Schema<IPago>(
   { _id: true }
 )
 
+const LineaReciboSchema = new Schema<ILineaRecibo>(
+  {
+    descripcion: { type: String, required: true },
+    monto_usd: { type: Number, required: true },
+  },
+  { _id: false }
+)
+
 const ReciboSchema = new Schema<IRecibo>(
   {
     numero: { type: String, required: true, unique: true },
@@ -52,6 +66,7 @@ const ReciboSchema = new Schema<IRecibo>(
     id_orden: { type: String, default: '' },
     numero_orden: { type: String, default: '' },
     concepto: { type: String, default: '' },
+    lineas_detalle: { type: [LineaReciboSchema], default: [] },
     total_usd: { type: Number, required: true },
     pagos: { type: [PagoSchema], default: [] },
     total_pagado_usd: { type: Number, default: 0 },

@@ -23,6 +23,7 @@ interface Recibo {
   numero_presupuesto: string
   numero_orden: string
   concepto: string
+  lineas_detalle: { descripcion: string; monto_usd: number }[]
   total_usd: number
   total_pagado_usd: number
   saldo_usd: number
@@ -30,7 +31,6 @@ interface Recibo {
   pagos: Pago[]
   notas: string
 }
-
 const formasPago = ['Efectivo', 'Transferencia', 'Cheque', 'Depósito']
 
 export default function VerReciboPage() {
@@ -193,7 +193,27 @@ export default function VerReciboPage() {
           {/* Concepto */}
           <div style={{ backgroundColor: '#f8fafc', borderRadius: '8px', padding: '16px', marginBottom: '24px' }}>
             <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '6px', letterSpacing: '1px' }}>CONCEPTO</div>
-            <div style={{ fontSize: '14px', fontWeight: 500 }}>{recibo.concepto}</div>
+            <div style={{ fontSize: '14px', fontWeight: 500, marginBottom: recibo.lineas_detalle?.length ? '12px' : 0 }}>{recibo.concepto}</div>
+            {recibo.lineas_detalle?.length > 0 && (
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '8px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <th style={{ textAlign: 'left', fontSize: '11px', fontWeight: 600, color: '#64748b', padding: '4px 0' }}>Descripción</th>
+                    <th style={{ textAlign: 'right', fontSize: '11px', fontWeight: 600, color: '#64748b', padding: '4px 0' }}>Monto U$S</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recibo.lineas_detalle.map((l, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '6px 0', fontSize: '12px' }}>{l.descripcion}</td>
+                      <td style={{ padding: '6px 0', fontSize: '12px', textAlign: 'right', fontWeight: 600 }}>
+                        {l.monto_usd.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           {/* Totales */}
