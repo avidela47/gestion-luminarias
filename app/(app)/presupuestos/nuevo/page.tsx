@@ -24,6 +24,7 @@ interface Linea {
   bonificacion: number
   precio_unitario: number
   precio_total: number
+  plazo_entrega_linea: string
 }
 
 interface ProductoCatalogo {
@@ -42,7 +43,6 @@ export default function NuevoPresupuestoPage() {
   const [vendedor, setVendedor] = useState(EMPRESA.vendedor_default)
   const [validez, setValidez] = useState(5)
   const [formaPago, setFormaPago] = useState('')
-  const [plazoEntrega, setPlazoEntrega] = useState('INMEDIATA')
   const [comentario, setComentario] = useState('')
   const [lineas, setLineas] = useState<Linea[]>([])
   const [guardando, setGuardando] = useState(false)
@@ -87,6 +87,7 @@ export default function NuevoPresupuestoPage() {
     setLineas((prev) => [...prev, {
       codigo: '', descripcion: '', cantidad: 1,
       bonificacion: 0, precio_unitario: 0, precio_total: 0,
+      plazo_entrega_linea: '',
     }])
   }
 
@@ -98,6 +99,7 @@ export default function NuevoPresupuestoPage() {
       bonificacion: 0,
       precio_unitario: producto.precio,
       precio_total: producto.precio,
+      plazo_entrega_linea: '',
     }])
     setMostrarCatalogo(false)
     setBusquedaCatalogo('')
@@ -107,7 +109,7 @@ export default function NuevoPresupuestoPage() {
     setLineas((prev) => prev.map((l, idx) => {
       if (idx !== i) return l
       const updated = { ...l, [campo]: valor }
-      const precio = updated.precio_unitario * updated.cantidad * (1 - updated.bonificacion / 100)
+      const precio = updated.precio_unitario * updated.cantidad
       return { ...updated, precio_total: Math.round(precio * 100) / 100 }
     }))
   }
@@ -165,7 +167,7 @@ export default function NuevoPresupuestoPage() {
         atencion,
         condicion_iva: clienteSeleccionado.condicion_iva,
         lineas, moneda: 'U$S', subtotal, iva, total,
-        forma_pago: formaPago, plazo_entrega: plazoEntrega, comentario, estado,
+        forma_pago: formaPago, plazo_entrega: '', comentario, estado,
       }),
     })
 
@@ -234,7 +236,7 @@ export default function NuevoPresupuestoPage() {
       {/* Condiciones */}
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' }}>
         <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>Condiciones</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
           <div>
             <label style={labelStyle}>VENDEDOR</label>
             <input type="text" value={vendedor} onChange={(e) => setVendedor(e.target.value)} style={inputStyle} />
@@ -242,10 +244,6 @@ export default function NuevoPresupuestoPage() {
           <div>
             <label style={labelStyle}>VALIDEZ (días)</label>
             <input type="number" min={1} value={validez} onChange={(e) => setValidez(Number(e.target.value))} style={inputStyle} />
-          </div>
-          <div>
-            <label style={labelStyle}>PLAZO ENTREGA</label>
-            <input type="text" value={plazoEntrega} onChange={(e) => setPlazoEntrega(e.target.value)} style={inputStyle} />
           </div>
           <div>
             <label style={labelStyle}>FORMA DE PAGO</label>
@@ -286,21 +284,21 @@ export default function NuevoPresupuestoPage() {
           </div>
         ) : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 80px 80px 110px 110px 36px', gap: '8px', marginBottom: '8px' }}>
-              {['Código', 'Descripción', 'Cantidad', 'Bonif. %', 'P. Unitario U$S', 'P. Total U$S', ''].map((h) => (
+            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 80px 120px 110px 110px 36px', gap: '8px', marginBottom: '8px' }}>
+              {['Código', 'Descripción', 'Cantidad', 'Plazo entrega', 'P. Unitario U$S', 'P. Total U$S', ''].map((h) => (
                 <div key={h} style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>{h}</div>
               ))}
             </div>
             {lineas.map((l, i) => (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '120px 1fr 80px 80px 110px 110px 36px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '120px 1fr 80px 120px 110px 110px 36px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
                 <input type="text" value={l.codigo} onChange={(e) => actualizarLinea(i, 'codigo', e.target.value)}
                   placeholder="Código" style={{ ...inputStyle, fontSize: '12px' }} />
                 <input type="text" value={l.descripcion} onChange={(e) => actualizarLinea(i, 'descripcion', e.target.value)}
                   placeholder="Descripción" style={{ ...inputStyle, fontSize: '12px' }} />
                 <input type="number" min={1} value={l.cantidad} onChange={(e) => actualizarLinea(i, 'cantidad', Number(e.target.value))}
                   style={{ ...inputStyle, fontSize: '12px' }} />
-                <input type="number" min={0} max={100} value={l.bonificacion} onChange={(e) => actualizarLinea(i, 'bonificacion', Number(e.target.value))}
-                  style={{ ...inputStyle, fontSize: '12px' }} />
+                <input type="text" value={l.plazo_entrega_linea} onChange={(e) => actualizarLinea(i, 'plazo_entrega_linea', e.target.value)}
+                  placeholder="Ej: Inmediata" style={{ ...inputStyle, fontSize: '12px' }} />
                 <input type="number" min={0} step={0.01} value={l.precio_unitario} onChange={(e) => actualizarLinea(i, 'precio_unitario', Number(e.target.value))}
                   style={{ ...inputStyle, fontSize: '12px' }} />
                 <div style={{ padding: '8px 10px', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
