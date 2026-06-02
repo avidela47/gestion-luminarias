@@ -5,6 +5,16 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Printer } from 'lucide-react'
 import { EMPRESA } from '@/lib/constants'
 
+interface Linea {
+  codigo: string
+  descripcion: string
+  cantidad: number
+  bonificacion: number
+  precio_unitario: number
+  precio_total: number
+  plazo_entrega_linea: string
+}
+
 interface Presupuesto {
   _id: string
   numero: string
@@ -19,7 +29,7 @@ interface Presupuesto {
   email: string
   atencion: string
   condicion_iva: string
-  lineas: { codigo: string; descripcion: string; cantidad: number; bonificacion: number; precio_unitario: number; precio_total: number }[]
+  lineas: Linea[]
   moneda: string
   subtotal: number
   iva: number
@@ -52,7 +62,6 @@ export default function VerPresupuestoPage() {
 
   return (
     <>
-      {/* Barra de acciones — solo visible en pantalla */}
       <div className="no-print" style={{
         padding: '16px 32px', borderBottom: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', gap: '12px',
@@ -78,7 +87,6 @@ export default function VerPresupuestoPage() {
         </button>
       </div>
 
-      {/* Documento imprimible */}
       <div style={{ padding: '32px', maxWidth: '900px', margin: '0 auto' }}>
         <div style={{
           backgroundColor: '#fff', border: '1px solid var(--border)',
@@ -111,10 +119,9 @@ export default function VerPresupuestoPage() {
             </div>
           </div>
 
-          {/* Línea separadora */}
           <div style={{ borderTop: '2px solid #2d7d78', marginBottom: '24px' }} />
 
-          {/* Datos cliente */}
+          {/* Datos cliente + Condiciones */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
             <div>
               <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '8px', letterSpacing: '1px' }}>
@@ -135,20 +142,19 @@ export default function VerPresupuestoPage() {
               </div>
               <div style={{ fontSize: '12px' }}>
                 <div><b>Validez:</b> {presupuesto.validez_dias} días</div>
-                <div><b>Plazo de entrega:</b> {presupuesto.plazo_entrega}</div>
                 {presupuesto.forma_pago && <div><b>Forma de pago:</b> {presupuesto.forma_pago}</div>}
               </div>
             </div>
           </div>
 
-          {/* Tabla de items */}
+          {/* Tabla */}
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '24px' }}>
             <thead>
               <tr style={{ backgroundColor: '#0f1923', color: '#fff' }}>
                 <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '12px', fontWeight: 600 }}>Código</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '12px', fontWeight: 600 }}>Descripción</th>
                 <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>Cant.</th>
-                <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>Bonif.</th>
+                <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>Plazo entrega</th>
                 <th style={{ padding: '10px 12px', textAlign: 'right', fontSize: '12px', fontWeight: 600 }}>P. Unitario</th>
                 <th style={{ padding: '10px 12px', textAlign: 'right', fontSize: '12px', fontWeight: 600 }}>P. Total</th>
               </tr>
@@ -160,7 +166,7 @@ export default function VerPresupuestoPage() {
                   <td style={{ padding: '10px 12px', fontSize: '12px' }}>{l.descripcion}</td>
                   <td style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px' }}>{l.cantidad}</td>
                   <td style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px' }}>
-                    {l.bonificacion > 0 ? `${l.bonificacion}%` : '—'}
+                    {l.plazo_entrega_linea || '—'}
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'right', fontSize: '12px', whiteSpace: 'nowrap' }}>
                     {presupuesto.moneda} {l.precio_unitario.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
@@ -191,7 +197,6 @@ export default function VerPresupuestoPage() {
             </div>
           </div>
 
-          {/* Comentario */}
           {presupuesto.comentario && (
             <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px', fontSize: '12px', color: '#64748b' }}>
               <b>COMENTARIO:</b> {presupuesto.comentario}
@@ -200,25 +205,12 @@ export default function VerPresupuestoPage() {
         </div>
       </div>
 
-      {/* Estilos de impresión */}
       <style>{`
         @media print {
-          aside,
-          nav,
-          .no-print { display: none !important; }
-          main {
-            margin-left: 0 !important;
-            padding: 0 !important;
-          }
-          body {
-            background: white !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
+          aside, nav, .no-print { display: none !important; }
+          main { margin-left: 0 !important; padding: 0 !important; }
+          body { background: white !important; margin: 0 !important; padding: 0 !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
       `}</style>
     </>
