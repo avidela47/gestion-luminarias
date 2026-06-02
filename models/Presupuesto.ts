@@ -7,6 +7,7 @@ export interface ILineaPresupuesto {
   bonificacion: number
   precio_unitario: number
   precio_total: number
+  plazo_entrega_linea: string
 }
 
 export interface IPresupuesto extends Document {
@@ -45,6 +46,7 @@ const LineaPresupuestoSchema = new Schema<ILineaPresupuesto>(
     bonificacion: { type: Number, default: 0 },
     precio_unitario: { type: Number, required: true },
     precio_total: { type: Number, required: true },
+    plazo_entrega_linea: { type: String, default: '' },
   },
   { _id: false }
 )
@@ -70,7 +72,7 @@ const PresupuestoSchema = new Schema<IPresupuesto>(
     iva: { type: Number, default: 0 },
     total: { type: Number, default: 0 },
     forma_pago: { type: String, default: '' },
-    plazo_entrega: { type: String, default: 'INMEDIATA' },
+    plazo_entrega: { type: String, default: '' },
     comentario: { type: String, default: '' },
     estado: {
       type: String,
