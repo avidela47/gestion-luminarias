@@ -43,6 +43,7 @@ export default function NuevoPresupuestoPage() {
   const [vendedor, setVendedor] = useState(EMPRESA.vendedor_default)
   const [validez, setValidez] = useState(5)
   const [formaPago, setFormaPago] = useState('')
+  const [cotizacion, setCotizacion] = useState('')
   const [comentario, setComentario] = useState('')
   const [lineas, setLineas] = useState<Linea[]>([])
   const [guardando, setGuardando] = useState(false)
@@ -167,7 +168,7 @@ export default function NuevoPresupuestoPage() {
         atencion,
         condicion_iva: clienteSeleccionado.condicion_iva,
         lineas, moneda: 'U$S', subtotal, iva, total,
-        forma_pago: formaPago, plazo_entrega: '', comentario, estado,
+        forma_pago: formaPago, cotizacion, plazo_entrega: '', comentario, estado,
       }),
     })
 
@@ -200,7 +201,6 @@ export default function NuevoPresupuestoPage() {
         </div>
       </div>
 
-      {/* Cliente */}
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' }}>
         <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>Datos del cliente</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
@@ -233,10 +233,9 @@ export default function NuevoPresupuestoPage() {
         )}
       </div>
 
-      {/* Condiciones */}
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' }}>
         <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>Condiciones</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
           <div>
             <label style={labelStyle}>VENDEDOR</label>
             <input type="text" value={vendedor} onChange={(e) => setVendedor(e.target.value)} style={inputStyle} />
@@ -250,10 +249,14 @@ export default function NuevoPresupuestoPage() {
             <input type="text" value={formaPago} onChange={(e) => setFormaPago(e.target.value)}
               placeholder="Ej: Cheque a 10 días" style={inputStyle} />
           </div>
+          <div>
+            <label style={labelStyle}>COTIZACIÓN</label>
+            <input type="text" value={cotizacion} onChange={(e) => setCotizacion(e.target.value)}
+              placeholder="Ej: Dólar BNA Tipo Vendedor" style={inputStyle} />
+          </div>
         </div>
       </div>
 
-      {/* Líneas */}
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Detalle</h2>
@@ -333,7 +336,6 @@ export default function NuevoPresupuestoPage() {
         )}
       </div>
 
-      {/* Comentario */}
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' }}>
         <label style={{ ...labelStyle, marginBottom: '8px' }}>COMENTARIO</label>
         <textarea value={comentario} onChange={(e) => setComentario(e.target.value)} rows={3}
@@ -377,7 +379,6 @@ export default function NuevoPresupuestoPage() {
         </button>
       </div>
 
-      {/* Modal catálogo */}
       {mostrarCatalogo && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 200,
@@ -396,12 +397,8 @@ export default function NuevoPresupuestoPage() {
               </h3>
               <div style={{ position: 'relative' }}>
                 <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="Código o descripción..."
-                  value={busquedaCatalogo}
-                  onChange={(e) => setBusquedaCatalogo(e.target.value)}
+                <input type="text" autoFocus placeholder="Código o descripción..."
+                  value={busquedaCatalogo} onChange={(e) => setBusquedaCatalogo(e.target.value)}
                   style={{
                     width: '100%', padding: '8px 12px 8px 32px',
                     border: '1px solid var(--border)', borderRadius: '8px',
@@ -418,13 +415,10 @@ export default function NuevoPresupuestoPage() {
                 </div>
               ) : (
                 catalogoFiltrado.map((p) => (
-                  <div
-                    key={p.codigo}
-                    onClick={() => agregarDesdeCatalogo(p)}
+                  <div key={p.codigo} onClick={() => agregarDesdeCatalogo(p)}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '12px 24px', borderBottom: '1px solid var(--border)',
-                      cursor: 'pointer',
+                      padding: '12px 24px', borderBottom: '1px solid var(--border)', cursor: 'pointer',
                     }}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--sidebar-hover)' }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}

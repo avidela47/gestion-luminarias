@@ -31,6 +31,7 @@ export interface IPresupuesto extends Document {
   total: number
   forma_pago: string
   plazo_entrega: string
+  cotizacion: string
   comentario: string
   estado: string
   notas: string
@@ -73,6 +74,7 @@ const PresupuestoSchema = new Schema<IPresupuesto>(
     total: { type: Number, default: 0 },
     forma_pago: { type: String, default: '' },
     plazo_entrega: { type: String, default: '' },
+    cotizacion: { type: String, default: '' },
     comentario: { type: String, default: '' },
     estado: {
       type: String,

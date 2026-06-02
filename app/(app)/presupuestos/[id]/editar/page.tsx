@@ -46,7 +46,7 @@ interface Presupuesto {
   iva: number
   total: number
   forma_pago: string
-  plazo_entrega: string
+  cotizacion: string
   comentario: string
   estado: string
 }
@@ -61,6 +61,7 @@ export default function EditarPresupuestoPage() {
   const [vendedor, setVendedor] = useState(EMPRESA.vendedor_default)
   const [validez, setValidez] = useState(5)
   const [formaPago, setFormaPago] = useState('')
+  const [cotizacion, setCotizacion] = useState('')
   const [comentario, setComentario] = useState('')
   const [lineas, setLineas] = useState<Linea[]>([])
   const [clienteSeleccionado, setClienteSeleccionado] = useState<Cliente | null>(null)
@@ -80,6 +81,7 @@ export default function EditarPresupuestoPage() {
         setVendedor(p.vendedor)
         setValidez(p.validez_dias)
         setFormaPago(p.forma_pago)
+        setCotizacion(p.cotizacion ?? '')
         setComentario(p.comentario)
         setLineas(p.lineas.map((l: Linea) => ({
           ...l,
@@ -129,7 +131,7 @@ export default function EditarPresupuestoPage() {
       body: JSON.stringify({
         vendedor, validez_dias: validez, atencion,
         lineas, subtotal, iva, total,
-        forma_pago: formaPago, plazo_entrega: '', comentario,
+        forma_pago: formaPago, cotizacion, plazo_entrega: '', comentario,
       }),
     })
 
@@ -167,7 +169,6 @@ export default function EditarPresupuestoPage() {
         </div>
       </div>
 
-      {/* Cliente — solo lectura */}
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' }}>
         <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>Datos del cliente</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', fontSize: '13px', marginBottom: '12px' }}>
@@ -182,10 +183,9 @@ export default function EditarPresupuestoPage() {
         </div>
       </div>
 
-      {/* Condiciones */}
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' }}>
         <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>Condiciones</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
           <div>
             <label style={labelStyle}>VENDEDOR</label>
             <input type="text" value={vendedor} onChange={(e) => setVendedor(e.target.value)} style={inputStyle} />
@@ -198,10 +198,14 @@ export default function EditarPresupuestoPage() {
             <label style={labelStyle}>FORMA DE PAGO</label>
             <input type="text" value={formaPago} onChange={(e) => setFormaPago(e.target.value)} style={inputStyle} />
           </div>
+          <div>
+            <label style={labelStyle}>COTIZACIÓN</label>
+            <input type="text" value={cotizacion} onChange={(e) => setCotizacion(e.target.value)}
+              placeholder="Ej: Dólar BNA Tipo Vendedor" style={inputStyle} />
+          </div>
         </div>
       </div>
 
-      {/* Líneas */}
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Detalle</h2>
@@ -270,7 +274,6 @@ export default function EditarPresupuestoPage() {
         )}
       </div>
 
-      {/* Comentario */}
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' }}>
         <label style={{ ...labelStyle, marginBottom: '8px' }}>COMENTARIO</label>
         <textarea value={comentario} onChange={(e) => setComentario(e.target.value)} rows={3}
