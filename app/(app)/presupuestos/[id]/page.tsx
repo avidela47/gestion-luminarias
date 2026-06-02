@@ -143,6 +143,7 @@ export default function VerPresupuestoPage() {
               <div style={{ fontSize: '12px' }}>
                 <div><b>Validez:</b> {presupuesto.validez_dias} días</div>
                 {presupuesto.forma_pago && <div><b>Forma de pago:</b> {presupuesto.forma_pago}</div>}
+<div><b>Cotización:</b> </div>
               </div>
             </div>
           </div>
