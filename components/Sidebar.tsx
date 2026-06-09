@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { signOut, useSession } from 'next-auth/react'
+import { signOut } from 'next-auth/react'
 import {
   LayoutDashboard, Package, Cpu, Factory, ArrowLeftRight,
   Users, Truck, FileText, Receipt, BarChart3, ChevronRight,
@@ -46,33 +46,22 @@ const menuItems = [
   },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ nombreUsuario }: { nombreUsuario: string }) {
   const pathname = usePathname()
-  const { data: session } = useSession()
-  const nombreUsuario = session?.user?.name ?? ''
 
   return (
-    <aside
-      style={{
-        width: '240px',
-        minHeight: '100vh',
-        backgroundColor: 'var(--sidebar-bg)',
-        borderRight: '1px solid var(--sidebar-border)',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'fixed',
-        top: 0, left: 0, bottom: 0,
-        zIndex: 50,
-        overflowY: 'auto',
-      }}
-    >
-      {/* Logo */}
+    <aside style={{
+      width: '240px', minHeight: '100vh',
+      backgroundColor: 'var(--sidebar-bg)',
+      borderRight: '1px solid var(--sidebar-border)',
+      display: 'flex', flexDirection: 'column',
+      position: 'fixed', top: 0, left: 0, bottom: 0,
+      zIndex: 50, overflowY: 'auto',
+    }}>
       <div style={{
         padding: '24px 20px 20px',
         borderBottom: '1px solid var(--sidebar-border)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
+        display: 'flex', alignItems: 'center', gap: '12px',
       }}>
         <Image src="/logo.png" alt="ITELSA SAS" width={38} height={38}
           style={{ objectFit: 'contain', borderRadius: '8px' }} />
@@ -91,13 +80,11 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Menú */}
       <nav style={{ flex: 1, padding: '16px 0' }}>
         {menuItems.map((grupo) => (
           <div key={grupo.grupo} style={{ marginBottom: '8px' }}>
             <div style={{
-              padding: '8px 20px 4px',
-              fontSize: '10px', fontWeight: 600,
+              padding: '8px 20px 4px', fontSize: '10px', fontWeight: 600,
               letterSpacing: '1.2px', color: 'var(--text-muted)',
             }}>
               {grupo.grupo}
@@ -139,7 +126,6 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer */}
       <div style={{
         padding: '16px 20px',
         borderTop: '1px solid var(--sidebar-border)',
