@@ -136,10 +136,10 @@ export default function SensoresPage() {
                     <td style={{ padding: '10px 16px' }}>
                       <span style={{
                         fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px',
-                        backgroundColor: item.tipo === 'sensor' ? 'var(--info-bg)' : 'var(--warning-bg)',
-                        color: item.tipo === 'sensor' ? 'var(--info)' : 'var(--warning)',
+                        backgroundColor: 'var(--info-bg)',
+color: 'var(--info)',
                       }}>
-                        {item.tipo === 'sensor' ? 'SENSOR' : 'FUENTE'}
+                        {item.tipo.replace(/_/g, ' ').toUpperCase()}
                       </span>
                     </td>
                     <td style={{ padding: '10px 16px', fontWeight: 600, color: bajoMinimo ? 'var(--danger)' : 'var(--success)' }}>
