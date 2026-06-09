@@ -8,7 +8,7 @@ export interface SensorFuente {
   _id: string
   codigo: string
   descripcion: string
-  tipo: 'sensor' | 'fuente'
+  tipo: string
   stock_actual: number
   stock_minimo: number
   precio: number

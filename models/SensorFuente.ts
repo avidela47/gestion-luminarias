@@ -1,6 +1,15 @@
 import mongoose, { Schema, Document } from 'mongoose'
 
-export type TipoSensorFuente = 'sensor' | 'fuente'
+export type TipoSensorFuente =
+  | 'sensor'
+  | 'fuente'
+  | 'acoplamiento_flexible'
+  | 'actuador'
+  | 'espejo'
+  | 'iluminacion'
+  | 'interruptor_actuador'
+  | 'modulo_seguridad'
+  | 'soporte'
 
 export interface ISensorFuente extends Document {
   codigo: string
@@ -21,7 +30,21 @@ const SensorFuenteSchema = new Schema<ISensorFuente>(
   {
     codigo: { type: String, required: true, unique: true, uppercase: true, trim: true },
     descripcion: { type: String, required: true, trim: true },
-    tipo: { type: String, required: true, enum: ['sensor', 'fuente'] },
+    tipo: {
+      type: String,
+      required: true,
+      enum: [
+        'sensor',
+        'fuente',
+        'acoplamiento_flexible',
+        'actuador',
+        'espejo',
+        'iluminacion',
+        'interruptor_actuador',
+        'modulo_seguridad',
+        'soporte',
+      ],
+    },
     stock_actual: { type: Number, default: 0 },
     stock_minimo: { type: Number, default: 0 },
     precio: { type: Number, default: 0 },
