@@ -7,7 +7,7 @@ import { signOut } from 'next-auth/react'
 import {
   LayoutDashboard, Package, Cpu, Factory, ArrowLeftRight,
   Users, Truck, FileText, Receipt, BarChart3, ChevronRight,
-  ClipboardList, LogOut, Zap, Lightbulb, Shield, ClipboardCheck,
+  ClipboardList, LogOut, Zap, Lightbulb, ClipboardCheck, Shield,
 } from 'lucide-react'
 
 const menuItems = [
@@ -19,6 +19,7 @@ const menuItems = [
       { label: 'Recetas (BOM)', href: '/recetas', icon: Package },
       { label: 'Fabricar', href: '/fabricar', icon: Factory },
       { label: 'Movimientos', href: '/movimientos', icon: ArrowLeftRight },
+      { label: 'Vales', href: '/vales', icon: ClipboardCheck },
     ],
   },
   {
@@ -29,16 +30,15 @@ const menuItems = [
     ],
   },
   {
-    grupo: 'COMERCIAL',
-    items: [
-      { label: 'Clientes', href: '/clientes', icon: Users },
-      { label: 'Proveedores', href: '/proveedores', icon: Truck },
-      { label: 'Presupuestos', href: '/presupuestos', icon: FileText },
-      { label: 'Órdenes de Trabajo', href: '/ordenes', icon: ClipboardList },
-      { label: 'Recibos', href: '/recibos', icon: Receipt },
-      { label: 'Vales', href: '/vales', icon: ClipboardCheck },
-    ],
-  },
+  grupo: 'COMERCIAL',
+  items: [
+    { label: 'Clientes', href: '/clientes', icon: Users },
+    { label: 'Proveedores', href: '/proveedores', icon: Truck },
+    { label: 'Presupuestos', href: '/presupuestos', icon: FileText },
+    { label: 'Órdenes de Trabajo', href: '/ordenes', icon: ClipboardList },
+    { label: 'Recibos', href: '/recibos', icon: Receipt },
+  ],
+},
   {
     grupo: 'REPORTES',
     items: [
