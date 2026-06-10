@@ -7,7 +7,7 @@ import { signOut } from 'next-auth/react'
 import {
   LayoutDashboard, Package, Cpu, Factory, ArrowLeftRight,
   Users, Truck, FileText, Receipt, BarChart3, ChevronRight,
-  ClipboardList, LogOut, Zap, Lightbulb,
+  ClipboardList, LogOut, Zap, Lightbulb, Shield,
 } from 'lucide-react'
 
 const menuItems = [
@@ -42,6 +42,7 @@ const menuItems = [
     grupo: 'REPORTES',
     items: [
       { label: 'Reportes', href: '/reportes', icon: BarChart3 },
+      { label: 'Auditoría', href: '/auditoria', icon: Shield },
     ],
   },
 ]
