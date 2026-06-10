@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { Plus, Search, Pencil, Trash2, Zap } from 'lucide-react'
 import ModalSensor from './ModalSensor'
+import * as XLSX from 'xlsx'
+import { Download } from 'lucide-react'
 
 export interface SensorFuente {
   _id: string
@@ -55,6 +57,23 @@ export default function SensoresPage() {
     cargar()
   }
 
+  const exportarExcel = () => {
+  const datos = filtrados.map((i) => ({
+    Código: i.codigo,
+    Descripción: i.descripcion,
+    Tipo: i.tipo.replace(/_/g, ' '),
+    'Stock actual': i.stock_actual,
+    'Stock mínimo': i.stock_minimo,
+    'Precio U$S': i.precio,
+    Proveedor: i.proveedor || '',
+    Notas: i.notas || '',
+  }))
+  const ws = XLSX.utils.json_to_sheet(datos)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Sensores y Fuentes')
+  XLSX.writeFile(wb, `sensores-fuentes-${new Date().toISOString().slice(0, 10)}.xlsx`)
+}
+
   return (
     <div style={{ padding: '32px', maxWidth: '1200px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
@@ -64,17 +83,26 @@ export default function SensoresPage() {
             Stock de sensores y fuentes de alimentación
           </p>
         </div>
-        <button
-          onClick={() => { setItemEditar(null); setModalAbierto(true) }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            backgroundColor: 'var(--primary)', color: '#fff',
-            border: 'none', borderRadius: '8px',
-            padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-          }}
-        >
-          <Plus size={16} /> Nuevo producto
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+  <button onClick={exportarExcel}
+    style={{
+      display: 'flex', alignItems: 'center', gap: '8px',
+      backgroundColor: 'transparent', color: 'var(--primary)',
+      border: '1px solid var(--primary)', borderRadius: '8px',
+      padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+    }}>
+    <Download size={16} /> Exportar Excel
+  </button>
+  <button onClick={() => { setItemEditar(null); setModalAbierto(true) }}
+    style={{
+      display: 'flex', alignItems: 'center', gap: '8px',
+      backgroundColor: 'var(--primary)', color: '#fff',
+      border: 'none', borderRadius: '8px',
+      padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+    }}>
+    <Plus size={16} /> Nuevo producto
+  </button>
+</div>
       </div>
 
       {/* Filtros */}
@@ -137,7 +165,7 @@ export default function SensoresPage() {
                       <span style={{
                         fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px',
                         backgroundColor: 'var(--info-bg)',
-color: 'var(--info)',
+                        color: 'var(--info)',
                       }}>
                         {item.tipo.replace(/_/g, ' ').toUpperCase()}
                       </span>
