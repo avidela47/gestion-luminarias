@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db/mongoose'
 import OrdenTrabajo from '@/models/OrdenTrabajo'
+import { registrarAuditoria } from '@/lib/auditoria'
 
 async function generarNumero(): Promise<string> {
   const ultima = await OrdenTrabajo.findOne().sort({ createdAt: -1 })
@@ -26,6 +27,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const numero = await generarNumero()
     const orden = await OrdenTrabajo.create({ ...body, numero })
+    await registrarAuditoria({ req, accion: 'crear', modulo: 'Ordenes', detalle: `Creó orden de trabajo ${orden.numero}`, dato_id: orden._id.toString() })
     return NextResponse.json({ ok: true, data: orden }, { status: 201 })
   } catch {
     return NextResponse.json({ ok: false, error: 'Error al crear orden' }, { status: 500 })

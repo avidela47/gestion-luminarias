@@ -4,8 +4,8 @@ import Produccion from '@/models/Produccion'
 import Receta from '@/models/Receta'
 import Componente from '@/models/Componente'
 import Movimiento from '@/models/Movimiento'
+import { registrarAuditoria } from '@/lib/auditoria'
 
-// GET — obtener todas las producciones
 export async function GET() {
   try {
     await connectDB()
@@ -16,7 +16,6 @@ export async function GET() {
   }
 }
 
-// POST — registrar una producción y descontar stock
 export async function POST(req: NextRequest) {
   try {
     await connectDB()
@@ -27,36 +26,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Datos incompletos' }, { status: 400 })
     }
 
-    // 1. Buscar la receta activa
     const receta = await Receta.findOne({ codigo: codigo_luminaria.toUpperCase(), activa: true })
-    if (!receta) {
-      return NextResponse.json({ ok: false, error: 'Receta no encontrada o inactiva' }, { status: 404 })
-    }
+    if (!receta) return NextResponse.json({ ok: false, error: 'Receta no encontrada o inactiva' }, { status: 404 })
 
-    // 2. Validar stock de cada componente
     const faltantes: string[] = []
     for (const item of receta.componentes) {
       const componente = await Componente.findOne({ id_componente: item.id_componente, activo: true })
-      if (!componente) {
-        faltantes.push(`${item.id_componente} (no existe)`)
-        continue
-      }
+      if (!componente) { faltantes.push(`${item.id_componente} (no existe)`); continue }
       const necesario = item.cantidad * cantidad
       if (componente.stock_actual < necesario) {
-        faltantes.push(
-          `${item.id_componente} — necesitás ${necesario}, tenés ${componente.stock_actual}`
-        )
+        faltantes.push(`${item.id_componente} — necesitás ${necesario}, tenés ${componente.stock_actual}`)
       }
     }
 
-    if (faltantes.length > 0) {
-      return NextResponse.json(
-        { ok: false, error: 'Stock insuficiente', faltantes },
-        { status: 400 }
-      )
-    }
+    if (faltantes.length > 0) return NextResponse.json({ ok: false, error: 'Stock insuficiente', faltantes }, { status: 400 })
 
-    // 3. Descontar stock y registrar movimientos
     const componentesDescontados = []
     const fecha = new Date()
 
@@ -67,13 +51,7 @@ export async function POST(req: NextRequest) {
         { $inc: { stock_actual: -cantidadDescontar } },
         { new: true }
       )
-
-      componentesDescontados.push({
-        id_componente: item.id_componente,
-        cantidad: cantidadDescontar,
-      })
-
-      // Registrar movimiento por cada componente
+      componentesDescontados.push({ id_componente: item.id_componente, cantidad: cantidadDescontar })
       const idMov = `MOV-${fecha.getFullYear()}-${Date.now()}-${item.id_componente}`
       await Movimiento.create({
         id_movimiento: idMov,
@@ -87,7 +65,6 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 4. Registrar la producción
     const idProd = `PROD-${fecha.getFullYear()}-${Date.now()}`
     const produccion = await Produccion.create({
       id_produccion: idProd,
@@ -99,12 +76,12 @@ export async function POST(req: NextRequest) {
       componentes_descontados: componentesDescontados,
     })
 
-    // Actualizar referencia en movimientos
     await Movimiento.updateMany(
-      { referencia: '' , notas: `Producción ${codigo_luminaria} x${cantidad}` },
+      { referencia: '', notas: `Producción ${codigo_luminaria} x${cantidad}` },
       { $set: { referencia: idProd } }
     )
 
+    await registrarAuditoria({ req, accion: 'crear', modulo: 'Produccion', detalle: `Fabricó ${cantidad} unidades de ${codigo_luminaria.toUpperCase()}`, dato_id: produccion._id.toString() })
     return NextResponse.json({ ok: true, data: produccion }, { status: 201 })
   } catch {
     return NextResponse.json({ ok: false, error: 'Error al registrar producción' }, { status: 500 })

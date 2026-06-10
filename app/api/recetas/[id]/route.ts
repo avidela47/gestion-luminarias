@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db/mongoose'
 import Receta from '@/models/Receta'
+import { registrarAuditoria } from '@/lib/auditoria'
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB()
     const { id } = await params
-    const receta = await Receta.findOne({ codigo: decodeURIComponent(id).toUpperCase() })
-    if (!receta) {
-      return NextResponse.json({ ok: false, error: 'Receta no encontrada' }, { status: 404 })
-    }
+    const receta = await Receta.findOne({ codigo: id.toUpperCase() })
+    if (!receta) return NextResponse.json({ ok: false, error: 'Receta no encontrada' }, { status: 404 })
     return NextResponse.json({ ok: true, data: receta })
   } catch {
     return NextResponse.json({ ok: false, error: 'Error al obtener receta' }, { status: 500 })
@@ -21,10 +20,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     await connectDB()
     const { id } = await params
     const body = await req.json()
-    const receta = await Receta.findOne({ codigo: decodeURIComponent(id).toUpperCase() })
-    if (!receta) {
-      return NextResponse.json({ ok: false, error: 'Receta no encontrada' }, { status: 404 })
-    }
+    const receta = await Receta.findOne({ codigo: id.toUpperCase() })
+    if (!receta) return NextResponse.json({ ok: false, error: 'Receta no encontrada' }, { status: 404 })
     const componentesCambiaron = JSON.stringify(receta.componentes) !== JSON.stringify(body.componentes)
     const update = {
       ...body,
@@ -32,10 +29,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       fecha_version: componentesCambiaron ? new Date() : receta.fecha_version,
     }
     const recetaActualizada = await Receta.findOneAndUpdate(
-      { codigo: decodeURIComponent(id).toUpperCase() },
-      { $set: update },
-      { new: true, runValidators: true }
+      { codigo: id.toUpperCase() }, { $set: update }, { new: true, runValidators: true }
     )
+    await registrarAuditoria({ req, accion: 'editar', modulo: 'Recetas', detalle: `Editó receta ${id.toUpperCase()}${componentesCambiaron ? ' (nueva versión)' : ''}`, dato_id: receta._id.toString() })
     return NextResponse.json({ ok: true, data: recetaActualizada })
   } catch {
     return NextResponse.json({ ok: false, error: 'Error al editar receta' }, { status: 500 })
@@ -46,10 +42,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   try {
     await connectDB()
     const { id } = await params
-    const receta = await Receta.findOneAndDelete({ codigo: decodeURIComponent(id).toUpperCase() })
-    if (!receta) {
-      return NextResponse.json({ ok: false, error: 'Receta no encontrada' }, { status: 404 })
-    }
+    const receta = await Receta.findOneAndUpdate(
+      { codigo: id.toUpperCase() }, { $set: { activa: false } }, { new: true }
+    )
+    if (!receta) return NextResponse.json({ ok: false, error: 'Receta no encontrada' }, { status: 404 })
+    await registrarAuditoria({ req, accion: 'eliminar', modulo: 'Recetas', detalle: `Eliminó receta ${id.toUpperCase()}`, dato_id: receta._id.toString() })
     return NextResponse.json({ ok: true, data: receta })
   } catch {
     return NextResponse.json({ ok: false, error: 'Error al eliminar receta' }, { status: 500 })

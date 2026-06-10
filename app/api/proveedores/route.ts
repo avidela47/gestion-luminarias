@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db/mongoose'
 import Proveedor from '@/models/Proveedor'
+import { registrarAuditoria } from '@/lib/auditoria'
 
 export async function GET() {
   try {
@@ -16,14 +17,8 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB()
     const body = await req.json()
-    const existe = await Proveedor.findOne({ id_proveedor: body.id_proveedor?.toUpperCase() })
-    if (existe) {
-      return NextResponse.json(
-        { ok: false, error: `Ya existe un proveedor con el código ${body.id_proveedor}` },
-        { status: 400 }
-      )
-    }
     const proveedor = await Proveedor.create(body)
+    await registrarAuditoria({ req, accion: 'crear', modulo: 'Proveedores', detalle: `Creó proveedor ${proveedor.nombre}`, dato_id: proveedor._id.toString() })
     return NextResponse.json({ ok: true, data: proveedor }, { status: 201 })
   } catch {
     return NextResponse.json({ ok: false, error: 'Error al crear proveedor' }, { status: 500 })
