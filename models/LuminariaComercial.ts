@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose'
 export interface ILuminariaComercial extends Document {
   codigo: string
   descripcion: string
+  origen: 'importada' | 'nacional'
   stock_actual: number
   stock_minimo: number
   precio: number
@@ -18,6 +19,7 @@ const LuminariaComercialSchema = new Schema<ILuminariaComercial>(
   {
     codigo: { type: String, required: true, unique: true, uppercase: true, trim: true },
     descripcion: { type: String, required: true, trim: true },
+    origen: { type: String, enum: ['importada', 'nacional'], default: 'importada' },
     stock_actual: { type: Number, default: 0 },
     stock_minimo: { type: Number, default: 0 },
     precio: { type: Number, default: 0 },
