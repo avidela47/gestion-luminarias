@@ -27,8 +27,8 @@ export interface Presupuesto {
 const estadoConfig: Record<string, { color: string; bg: string }> = {
   Borrador:  { color: 'var(--text-secondary)', bg: '#f1f5f9' },
   Enviado:   { color: 'var(--info)',           bg: 'var(--info-bg)' },
-  Aceptado:  { color: 'var(--success)',        bg: 'var(--success-bg)' },
-  Cancelado: { color: 'var(--danger)',         bg: 'var(--danger-bg)' },
+  Aprobado:  { color: 'var(--success)',        bg: 'var(--success-bg)' },
+  Rechazado: { color: 'var(--danger)',         bg: 'var(--danger-bg)' },
 }
 
 export default function PresupuestosPage() {
@@ -161,9 +161,9 @@ export default function PresupuestosPage() {
                         }}
                       >
                         <option value="Borrador">Borrador</option>
-                        <option value="Enviado">Enviado</option>
-                        <option value="Aceptado">Aceptado</option>
-                        <option value="Cancelado">Cancelado</option>
+<option value="Enviado">Enviado</option>
+<option value="Aprobado">Aprobado</option>
+<option value="Rechazado">Rechazado</option>
                       </select>
                     </td>
                     <td style={{ padding: '10px 16px' }}>
