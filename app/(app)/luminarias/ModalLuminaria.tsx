@@ -57,13 +57,13 @@ export default function ModalLuminaria({ item, onClose, onGuardado }: Props) {
         : '/api/productos'
       method = esEdicion && item?.tipo === 'fabricada' ? 'PUT' : 'POST'
       body = {
-        codigo_luminaria: form.codigo.toUpperCase(),
-        descripcion: form.descripcion,
-        stock_actual: Number(form.stock_actual),
-        stock_minimo: Number(form.stock_minimo),
-        precio: Number(form.precio),
-        notas: form.notas,
-      }
+  codigo_luminaria: form.codigo.toUpperCase(),
+  nombre: form.descripcion,
+  stock_actual: Number(form.stock_actual),
+  stock_minimo: Number(form.stock_minimo),
+  precio_venta: Number(form.precio),
+  notas: form.notas,
+}
     } else {
       const esComercialOriginal = item?.tipo === 'comercial'
       url = esEdicion && esComercialOriginal
