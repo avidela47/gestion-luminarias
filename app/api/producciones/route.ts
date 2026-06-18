@@ -82,32 +82,36 @@ export async function POST(req: NextRequest) {
       { $set: { referencia: idProd } }
     )
 
-    // Sumar al stock de ProductoTerminado
-    // Sumar al stock de ProductoTerminado
-try {
-  await ProductoTerminado.findOneAndUpdate(
-    { codigo_luminaria: codigo_luminaria.toUpperCase() },
-    {
-      $inc: { stock_actual: cantidad },
-      $setOnInsert: {
-        nombre: receta.nombre || codigo_luminaria.toUpperCase(),
+    // Crear o actualizar ProductoTerminado
+    const nombreProducto = receta.nombre && receta.nombre.trim() !== '' 
+      ? receta.nombre 
+      : codigo_luminaria.toUpperCase()
+    
+    const productoExiste = await ProductoTerminado.findOne({ codigo_luminaria: codigo_luminaria.toUpperCase() })
+    
+    if (productoExiste) {
+      await ProductoTerminado.findOneAndUpdate(
+        { codigo_luminaria: codigo_luminaria.toUpperCase() },
+        { $inc: { stock_actual: cantidad } },
+        { new: true }
+      )
+    } else {
+      await ProductoTerminado.create({
+        codigo_luminaria: codigo_luminaria.toUpperCase(),
+        nombre: nombreProducto,
+        stock_actual: cantidad,
         stock_minimo: 0,
         precio_venta: 0,
         notas: '',
         foto: '',
         activo: true,
-      },
-    },
-    { new: true, upsert: true }
-  )
-} catch (e) {
-  console.error('[produccion] error upsert ProductoTerminado:', e)
-}
-  
+      })
+    }
 
     await registrarAuditoria({ req, accion: 'crear', modulo: 'Produccion', detalle: `Fabricó ${cantidad} unidades de ${codigo_luminaria.toUpperCase()}`, dato_id: produccion._id.toString() })
     return NextResponse.json({ ok: true, data: produccion }, { status: 201 })
-  } catch {
+  } catch (e) {
+    console.error('[producciones] error:', e)
     return NextResponse.json({ ok: false, error: 'Error al registrar producción' }, { status: 500 })
   }
 }
