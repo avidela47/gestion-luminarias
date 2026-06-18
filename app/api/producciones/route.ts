@@ -82,22 +82,18 @@ export async function POST(req: NextRequest) {
       { $set: { referencia: idProd } }
     )
 
-    // Crear o actualizar ProductoTerminado
-    const nombreProducto = receta.nombre && receta.nombre.trim() !== '' 
-      ? receta.nombre 
-      : codigo_luminaria.toUpperCase()
-    
-    const productoExiste = await ProductoTerminado.findOne({ codigo_luminaria: codigo_luminaria.toUpperCase() })
-    
+    const nombreProducto = (receta.nombre ?? '').trim() !== '' ? receta.nombre : codigo_luminaria.toUpperCase()
+    const codigoUpper = codigo_luminaria.toUpperCase()
+
+    const productoExiste = await ProductoTerminado.findOne({ codigo_luminaria: codigoUpper })
     if (productoExiste) {
-      await ProductoTerminado.findOneAndUpdate(
-        { codigo_luminaria: codigo_luminaria.toUpperCase() },
-        { $inc: { stock_actual: cantidad } },
-        { new: true }
+      await ProductoTerminado.updateOne(
+        { codigo_luminaria: codigoUpper },
+        { $inc: { stock_actual: cantidad } }
       )
     } else {
-      await ProductoTerminado.create({
-        codigo_luminaria: codigo_luminaria.toUpperCase(),
+      await ProductoTerminado.insertMany([{
+        codigo_luminaria: codigoUpper,
         nombre: nombreProducto,
         stock_actual: cantidad,
         stock_minimo: 0,
@@ -105,13 +101,13 @@ export async function POST(req: NextRequest) {
         notas: '',
         foto: '',
         activo: true,
-      })
+      }])
     }
 
-    await registrarAuditoria({ req, accion: 'crear', modulo: 'Produccion', detalle: `Fabricó ${cantidad} unidades de ${codigo_luminaria.toUpperCase()}`, dato_id: produccion._id.toString() })
+    await registrarAuditoria({ req, accion: 'crear', modulo: 'Produccion', detalle: `Fabricó ${cantidad} unidades de ${codigoUpper}`, dato_id: produccion._id.toString() })
     return NextResponse.json({ ok: true, data: produccion }, { status: 201 })
   } catch (e) {
     console.error('[producciones] error:', e)
-    return NextResponse.json({ ok: false, error: 'Error al registrar producción' }, { status: 500 })
+    return NextResponse.json({ ok: false, error: String(e) }, { status: 500 })
   }
 }
