@@ -4,6 +4,7 @@ import Produccion from '@/models/Produccion'
 import Receta from '@/models/Receta'
 import Componente from '@/models/Componente'
 import Movimiento from '@/models/Movimiento'
+import ProductoTerminado from '@/models/ProductoTerminado'
 import { registrarAuditoria } from '@/lib/auditoria'
 
 export async function GET() {
@@ -79,6 +80,13 @@ export async function POST(req: NextRequest) {
     await Movimiento.updateMany(
       { referencia: '', notas: `Producción ${codigo_luminaria} x${cantidad}` },
       { $set: { referencia: idProd } }
+    )
+
+    // Sumar al stock de ProductoTerminado
+    await ProductoTerminado.findOneAndUpdate(
+      { codigo_luminaria: codigo_luminaria.toUpperCase() },
+      { $inc: { stock_actual: cantidad } },
+      { new: true }
     )
 
     await registrarAuditoria({ req, accion: 'crear', modulo: 'Produccion', detalle: `Fabricó ${cantidad} unidades de ${codigo_luminaria.toUpperCase()}`, dato_id: produccion._id.toString() })
