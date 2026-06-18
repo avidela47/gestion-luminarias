@@ -84,10 +84,20 @@ export async function POST(req: NextRequest) {
 
     // Sumar al stock de ProductoTerminado
     await ProductoTerminado.findOneAndUpdate(
-      { codigo_luminaria: codigo_luminaria.toUpperCase() },
-      { $inc: { stock_actual: cantidad } },
-      { new: true }
-    )
+  { codigo_luminaria: codigo_luminaria.toUpperCase() },
+  {
+    $inc: { stock_actual: cantidad },
+    $setOnInsert: {
+      nombre: receta.nombre,
+      stock_minimo: 0,
+      precio_venta: 0,
+      notas: '',
+      foto: '',
+      activo: true,
+    },
+  },
+  { new: true, upsert: true }
+)
 
     await registrarAuditoria({ req, accion: 'crear', modulo: 'Produccion', detalle: `Fabricó ${cantidad} unidades de ${codigo_luminaria.toUpperCase()}`, dato_id: produccion._id.toString() })
     return NextResponse.json({ ok: true, data: produccion }, { status: 201 })
