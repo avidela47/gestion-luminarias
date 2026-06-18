@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Plus, Search, Pencil, Trash2, Lightbulb } from 'lucide-react'
 import ModalLuminaria from './ModalLuminaria'
 
@@ -8,10 +8,12 @@ export interface LuminariaItem {
   _id: string
   codigo_luminaria?: string
   codigo?: string
-  descripcion: string
+  nombre?: string
+  descripcion?: string
   stock_actual: number
   stock_minimo: number
   precio: number
+  precio_venta?: number
   proveedor?: string
   notas?: string
   tiene_receta: boolean
@@ -25,6 +27,44 @@ const tipoBadge = (item: LuminariaItem) => {
   return { label: 'COMERCIAL', bg: 'var(--info-bg)', color: 'var(--info)' }
 }
 
+interface ProdRaw { _id: string; codigo_luminaria: string; nombre: string; stock_actual: number; stock_minimo: number; precio_venta: number; notas: string }
+interface ComRaw { _id: string; codigo: string; descripcion: string; stock_actual: number; stock_minimo: number; precio: number; proveedor: string; notas: string; origen: 'importada' | 'nacional' }
+
+function mapData(prodData: ProdRaw[], comData: ComRaw[]): LuminariaItem[] {
+  const fabricadas: LuminariaItem[] = prodData.map((p) => ({
+    _id: p._id,
+    codigo: p.codigo_luminaria,
+    codigo_luminaria: p.codigo_luminaria,
+    descripcion: p.nombre,
+    nombre: p.nombre,
+    stock_actual: p.stock_actual,
+    stock_minimo: p.stock_minimo,
+    precio: p.precio_venta,
+    precio_venta: p.precio_venta,
+    notas: p.notas,
+    tiene_receta: true,
+    tipo: 'fabricada' as const,
+  }))
+
+  const comerciales: LuminariaItem[] = comData.map((c) => ({
+    _id: c._id,
+    codigo: c.codigo,
+    codigo_luminaria: c.codigo,
+    descripcion: c.descripcion,
+    nombre: c.descripcion,
+    stock_actual: c.stock_actual,
+    stock_minimo: c.stock_minimo,
+    precio: c.precio,
+    proveedor: c.proveedor,
+    notas: c.notas,
+    origen: c.origen,
+    tiene_receta: false,
+    tipo: 'comercial' as const,
+  }))
+
+  return [...fabricadas, ...comerciales].sort((a, b) => (a.codigo ?? '').localeCompare(b.codigo ?? ''))
+}
+
 export default function LuminariasPage() {
   const [items, setItems] = useState<LuminariaItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -34,55 +74,31 @@ export default function LuminariasPage() {
   const [itemEditar, setItemEditar] = useState<LuminariaItem | null>(null)
   const [confirmarEliminar, setConfirmarEliminar] = useState<{ codigo: string; tipo: 'fabricada' | 'comercial' } | null>(null)
 
-  const cargar = async () => {
+  const cargar = useCallback(async () => {
     const [prodRes, comRes] = await Promise.all([
       fetch('/api/productos').then((r) => r.json()),
       fetch('/api/luminarias-comerciales').then((r) => r.json()),
     ])
-    const fabricadas: LuminariaItem[] = (prodRes.ok ? prodRes.data : []).map((p: {
-      _id: string; codigo_luminaria: string; descripcion: string;
-      stock_actual: number; stock_minimo: number; precio: number; notas: string
-    }) => ({ ...p, codigo: p.codigo_luminaria, tiene_receta: true, tipo: 'fabricada' as const }))
-
-    const comerciales: LuminariaItem[] = (comRes.ok ? comRes.data : []).map((c: {
-      _id: string; codigo: string; descripcion: string;
-      stock_actual: number; stock_minimo: number; precio: number; proveedor: string; notas: string; origen: 'importada' | 'nacional'
-    }) => ({ ...c, codigo_luminaria: c.codigo, tiene_receta: false, tipo: 'comercial' as const }))
-
-    setItems([...fabricadas, ...comerciales].sort((a, b) => (a.codigo ?? '').localeCompare(b.codigo ?? '')))
+    setItems(mapData(prodRes.ok ? prodRes.data : [], comRes.ok ? comRes.data : []))
     setLoading(false)
-  }
+  }, [])
 
   useEffect(() => {
     let activo = true
     async function fetchData() {
-      const [prodRes, comRes] = await Promise.all([
-        fetch('/api/productos').then((r) => r.json()),
-        fetch('/api/luminarias-comerciales').then((r) => r.json()),
-      ])
+      await cargar()
       if (!activo) return
-      const fabricadas: LuminariaItem[] = (prodRes.ok ? prodRes.data : []).map((p: {
-        _id: string; codigo_luminaria: string; descripcion: string;
-        stock_actual: number; stock_minimo: number; precio: number; notas: string
-      }) => ({ ...p, codigo: p.codigo_luminaria, tiene_receta: true, tipo: 'fabricada' as const }))
-
-      const comerciales: LuminariaItem[] = (comRes.ok ? comRes.data : []).map((c: {
-        _id: string; codigo: string; descripcion: string;
-        stock_actual: number; stock_minimo: number; precio: number; proveedor: string; notas: string; origen: 'importada' | 'nacional'
-      }) => ({ ...c, codigo_luminaria: c.codigo, tiene_receta: false, tipo: 'comercial' as const }))
-
-      setItems([...fabricadas, ...comerciales].sort((a, b) => (a.codigo ?? '').localeCompare(b.codigo ?? '')))
-      setLoading(false)
     }
     fetchData()
     return () => { activo = false }
-  }, [])
+  }, [cargar])
 
   const filtrados = items.filter((i) => {
     const codigo = i.codigo ?? i.codigo_luminaria ?? ''
+    const desc = i.descripcion ?? i.nombre ?? ''
     const matchBusqueda =
       codigo.toLowerCase().includes(busqueda.toLowerCase()) ||
-      i.descripcion.toLowerCase().includes(busqueda.toLowerCase())
+      desc.toLowerCase().includes(busqueda.toLowerCase())
     let matchTipo = true
     if (filtroTipo === 'fabricada') matchTipo = i.tipo === 'fabricada'
     else if (filtroTipo === 'comercial') matchTipo = i.tipo === 'comercial' && i.origen !== 'nacional'
@@ -98,7 +114,7 @@ export default function LuminariasPage() {
       : `/api/luminarias-comerciales/${encodeURIComponent(codigo)}`
     await fetch(url, { method: 'DELETE' })
     setConfirmarEliminar(null)
-    cargar()
+    await cargar()
   }
 
   return (
@@ -159,7 +175,7 @@ export default function LuminariasPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid var(--border)' }}>
-                {['Código', 'Descripción', 'Tipo', 'Stock actual', 'Stock mínimo', 'Precio U$S', 'Proveedor', ''].map((h) => (
+                {['Código', 'Nombre', 'Tipo', 'Stock actual', 'Stock mínimo', 'Precio', 'Proveedor', ''].map((h) => (
                   <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
@@ -167,12 +183,14 @@ export default function LuminariasPage() {
             <tbody>
               {filtrados.map((item) => {
                 const codigo = item.codigo ?? item.codigo_luminaria ?? ''
+                const desc = item.descripcion ?? item.nombre ?? ''
+                const precio = item.precio ?? item.precio_venta ?? 0
                 const bajoMinimo = item.stock_actual < item.stock_minimo
                 const badge = tipoBadge(item)
                 return (
                   <tr key={item._id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--primary)' }}>{codigo}</td>
-                    <td style={{ padding: '10px 16px', color: 'var(--text-primary)' }}>{item.descripcion}</td>
+                    <td style={{ padding: '10px 16px', color: 'var(--text-primary)' }}>{desc}</td>
                     <td style={{ padding: '10px 16px' }}>
                       <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px', backgroundColor: badge.bg, color: badge.color }}>
                         {badge.label}
@@ -186,7 +204,7 @@ export default function LuminariasPage() {
                     </td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-secondary)' }}>{item.stock_minimo}</td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-secondary)' }}>
-                      {item.precio > 0 ? item.precio.toLocaleString('es-AR', { minimumFractionDigits: 2 }) : '—'}
+                      {precio > 0 ? precio.toLocaleString('es-AR', { minimumFractionDigits: 2 }) : '—'}
                     </td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-secondary)' }}>{item.proveedor || '—'}</td>
                     <td style={{ padding: '10px 16px' }}>
@@ -213,7 +231,7 @@ export default function LuminariasPage() {
         <ModalLuminaria
           item={itemEditar}
           onClose={() => setModalAbierto(false)}
-          onGuardado={() => { setModalAbierto(false); cargar() }}
+          onGuardado={() => { setModalAbierto(false); void cargar() }}
         />
       )}
 
