@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
   {
     $inc: { stock_actual: cantidad },
     $setOnInsert: {
-      nombre: receta.nombre,
+     nombre: receta.nombre || codigo_luminaria.toUpperCase(),
       stock_minimo: 0,
       precio_venta: 0,
       notas: '',
