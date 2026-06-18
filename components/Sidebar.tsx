@@ -7,7 +7,7 @@ import { signOut } from 'next-auth/react'
 import {
   LayoutDashboard, Package, Cpu, Factory, ArrowLeftRight,
   Users, Truck, FileText, Receipt, BarChart3, ChevronRight,
-  ClipboardList, LogOut, Zap, Lightbulb, ClipboardCheck, Shield, Wrench,
+  ClipboardList, LogOut, Zap, Lightbulb, ClipboardCheck, Shield, Wrench, PackageCheck,
 } from 'lucide-react'
 
 const menuItems = [
@@ -38,6 +38,7 @@ const menuItems = [
     { label: 'Presupuestos', href: '/presupuestos', icon: FileText },
     { label: 'Órdenes de Trabajo', href: '/ordenes', icon: ClipboardList },
     { label: 'Recibos', href: '/recibos', icon: Receipt },
+    { label: 'Despachos', href: '/despachos', icon: PackageCheck },
   ],
 },
   {
