@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectDB } from '@/lib/db/mongoose'
+import { connectDB, getDB } from '@/lib/db/mongoose'
 import Produccion from '@/models/Produccion'
 import Receta from '@/models/Receta'
 import Componente from '@/models/Componente'
 import Movimiento from '@/models/Movimiento'
 import { registrarAuditoria } from '@/lib/auditoria'
-import mongoose from 'mongoose'
 
 export async function GET() {
   try {
@@ -20,6 +19,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     await connectDB()
+    const db = getDB()
     const body = await req.json()
     const { codigo_luminaria, cantidad, operario, notas } = body
 
@@ -82,20 +82,19 @@ export async function POST(req: NextRequest) {
       { $set: { referencia: idProd } }
     )
 
-    // Usar driver nativo directo
     const codigoUpper = codigo_luminaria.toUpperCase()
     const nombreProducto = (receta.nombre ?? '').trim() !== '' ? receta.nombre : codigoUpper
-    const db = mongoose.connection.db!
+    const col = db.collection('productoterminados')
 
-    const existe = await db.collection('productoterminados').findOne({ codigo_luminaria: codigoUpper })
+    const existe = await col.findOne({ codigo_luminaria: codigoUpper })
 
     if (existe) {
-      await db.collection('productoterminados').updateOne(
+      await col.updateOne(
         { codigo_luminaria: codigoUpper },
         { $inc: { stock_actual: cantidad }, $set: { activo: true, updatedAt: new Date() } }
       )
     } else {
-      await db.collection('productoterminados').insertOne({
+      await col.insertOne({
         codigo_luminaria: codigoUpper,
         nombre: nombreProducto,
         stock_actual: cantidad,
