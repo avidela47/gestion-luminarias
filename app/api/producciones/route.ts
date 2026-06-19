@@ -4,8 +4,8 @@ import Produccion from '@/models/Produccion'
 import Receta from '@/models/Receta'
 import Componente from '@/models/Componente'
 import Movimiento from '@/models/Movimiento'
+import ProductoTerminado from '@/models/ProductoTerminado'
 import { registrarAuditoria } from '@/lib/auditoria'
-import mongoose from 'mongoose'
 
 export async function GET() {
   try {
@@ -82,20 +82,27 @@ export async function POST(req: NextRequest) {
       { $set: { referencia: idProd } }
     )
 
-    // Usar driver nativo directo
+    // Crear o actualizar ProductoTerminado con Mongoose
     const codigoUpper = codigo_luminaria.toUpperCase()
     const nombreProducto = (receta.nombre ?? '').trim() !== '' ? receta.nombre : codigoUpper
-   const db = mongoose.connection.db!
 
-    const existe = await db.collection('productoterminados').findOne({ codigo_luminaria: codigoUpper })
+    // Eliminar caché del modelo para forzar re-registro
+    if (require.cache) {
+      Object.keys(require.cache).forEach(key => {
+        if (key.includes('ProductoTerminado')) delete require.cache[key]
+      })
+    }
+
+    const existe = await ProductoTerminado.findOne({ codigo_luminaria: codigoUpper })
 
     if (existe) {
-      await db.collection('productoterminados').updateOne(
+      await ProductoTerminado.findOneAndUpdate(
         { codigo_luminaria: codigoUpper },
-        { $inc: { stock_actual: cantidad }, $set: { activo: true, updatedAt: new Date() } }
+        { $inc: { stock_actual: cantidad }, $set: { activo: true } },
+        { new: true }
       )
     } else {
-      await db.collection('productoterminados').insertOne({
+      await ProductoTerminado.create({
         codigo_luminaria: codigoUpper,
         nombre: nombreProducto,
         stock_actual: cantidad,
@@ -104,8 +111,6 @@ export async function POST(req: NextRequest) {
         notas: '',
         foto: '',
         activo: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       })
     }
 
