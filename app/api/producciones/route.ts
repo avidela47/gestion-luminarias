@@ -27,9 +27,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Datos incompletos' }, { status: 400 })
     }
 
-    const receta = await Receta.findOne({ codigo: codigo_luminaria.toUpperCase(), activa: true })
+    const codigoUpper = codigo_luminaria.toUpperCase()
+
+    const receta = await Receta.findOne({ codigo: codigoUpper, activa: true })
     if (!receta) return NextResponse.json({ ok: false, error: 'Receta no encontrada o inactiva' }, { status: 404 })
 
+    // 1. Validar stock de componentes
     const faltantes: string[] = []
     for (const item of receta.componentes) {
       const componente = await Componente.findOne({ id_componente: item.id_componente, activo: true })
@@ -39,62 +42,11 @@ export async function POST(req: NextRequest) {
         faltantes.push(`${item.id_componente} — necesitás ${necesario}, tenés ${componente.stock_actual}`)
       }
     }
-
     if (faltantes.length > 0) return NextResponse.json({ ok: false, error: 'Stock insuficiente', faltantes }, { status: 400 })
 
-    const componentesDescontados = []
-    const fecha = new Date()
-
-    for (const item of receta.componentes) {
-      const cantidadDescontar = item.cantidad * cantidad
-      const componente = await Componente.findOneAndUpdate(
-        { id_componente: item.id_componente },
-        { $inc: { stock_actual: -cantidadDescontar } },
-        { new: true }
-      )
-      componentesDescontados.push({ id_componente: item.id_componente, cantidad: cantidadDescontar })
-      const idMov = `MOV-${fecha.getFullYear()}-${Date.now()}-${item.id_componente}`
-      await Movimiento.create({
-        id_movimiento: idMov,
-        tipo: 'salida_produccion',
-        id_componente: item.id_componente,
-        cantidad: -cantidadDescontar,
-        stock_resultante: componente!.stock_actual,
-        referencia: '',
-        notas: `Producción ${codigo_luminaria} x${cantidad}`,
-        usuario: operario || 'admin',
-      })
-    }
-
-    const idProd = `PROD-${fecha.getFullYear()}-${Date.now()}`
-    const produccion = await Produccion.create({
-      id_produccion: idProd,
-      codigo_luminaria: codigo_luminaria.toUpperCase(),
-      version_receta: receta.version,
-      cantidad,
-      operario: operario || 'admin',
-      notas: notas || '',
-      componentes_descontados: componentesDescontados,
-    })
-
-    await Movimiento.updateMany(
-      { referencia: '', notas: `Producción ${codigo_luminaria} x${cantidad}` },
-      { $set: { referencia: idProd } }
-    )
-
-    // Crear o actualizar ProductoTerminado con Mongoose
-    const codigoUpper = codigo_luminaria.toUpperCase()
+    // 2. Crear o actualizar ProductoTerminado PRIMERO (antes de tocar componentes)
     const nombreProducto = (receta.nombre ?? '').trim() !== '' ? receta.nombre : codigoUpper
-
-    // Eliminar caché del modelo para forzar re-registro
-    if (require.cache) {
-      Object.keys(require.cache).forEach(key => {
-        if (key.includes('ProductoTerminado')) delete require.cache[key]
-      })
-    }
-
     const existe = await ProductoTerminado.findOne({ codigo_luminaria: codigoUpper })
-
     if (existe) {
       await ProductoTerminado.findOneAndUpdate(
         { codigo_luminaria: codigoUpper },
@@ -113,6 +65,43 @@ export async function POST(req: NextRequest) {
         activo: true,
       })
     }
+
+    // 3. Descontar componentes y registrar movimientos
+    const componentesDescontados = []
+    const fecha = new Date()
+    const idProd = `PROD-${fecha.getFullYear()}-${Date.now()}`
+
+    for (const item of receta.componentes) {
+      const cantidadDescontar = item.cantidad * cantidad
+      const componente = await Componente.findOneAndUpdate(
+        { id_componente: item.id_componente },
+        { $inc: { stock_actual: -cantidadDescontar } },
+        { new: true }
+      )
+      componentesDescontados.push({ id_componente: item.id_componente, cantidad: cantidadDescontar })
+      const idMov = `MOV-${fecha.getFullYear()}-${Date.now()}-${item.id_componente}`
+      await Movimiento.create({
+        id_movimiento: idMov,
+        tipo: 'salida_produccion',
+        id_componente: item.id_componente,
+        cantidad: -cantidadDescontar,
+        stock_resultante: componente!.stock_actual,
+        referencia: idProd,
+        notas: `Producción ${codigoUpper} x${cantidad}`,
+        usuario: operario || 'admin',
+      })
+    }
+
+    // 4. Registrar la producción
+    const produccion = await Produccion.create({
+      id_produccion: idProd,
+      codigo_luminaria: codigoUpper,
+      version_receta: receta.version,
+      cantidad,
+      operario: operario || 'admin',
+      notas: notas || '',
+      componentes_descontados: componentesDescontados,
+    })
 
     await registrarAuditoria({ req, accion: 'crear', modulo: 'Produccion', detalle: `Fabricó ${cantidad} unidades de ${codigoUpper}`, dato_id: produccion._id.toString() })
     return NextResponse.json({ ok: true, data: produccion }, { status: 201 })
