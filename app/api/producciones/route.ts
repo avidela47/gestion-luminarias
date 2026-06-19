@@ -4,8 +4,8 @@ import Produccion from '@/models/Produccion'
 import Receta from '@/models/Receta'
 import Componente from '@/models/Componente'
 import Movimiento from '@/models/Movimiento'
-import mongoose from 'mongoose'
 import { registrarAuditoria } from '@/lib/auditoria'
+import mongoose from 'mongoose'
 
 export async function GET() {
   try {
@@ -82,29 +82,32 @@ export async function POST(req: NextRequest) {
       { $set: { referencia: idProd } }
     )
 
-    // Usar driver nativo para evitar problemas de caché de Mongoose
-    const db = mongoose.connection.db
-    const col = db!.collection('productoterminados')
+    // Usar driver nativo directo
     const codigoUpper = codigo_luminaria.toUpperCase()
     const nombreProducto = (receta.nombre ?? '').trim() !== '' ? receta.nombre : codigoUpper
+    const db = mongoose.connection.db!
 
-    await col.updateOne(
-  { codigo_luminaria: codigoUpper },
-  {
-    $inc: { stock_actual: cantidad },
-    $set: { activo: true, updatedAt: new Date() },
-    $setOnInsert: {
-      codigo_luminaria: codigoUpper,
-      nombre: nombreProducto,
-      stock_minimo: 0,
-      precio_venta: 0,
-      notas: '',
-      foto: '',
-      createdAt: new Date(),
-    },
-  },
-  { upsert: true }
-)
+    const existe = await db.collection('productoterminados').findOne({ codigo_luminaria: codigoUpper })
+
+    if (existe) {
+      await db.collection('productoterminados').updateOne(
+        { codigo_luminaria: codigoUpper },
+        { $inc: { stock_actual: cantidad }, $set: { activo: true, updatedAt: new Date() } }
+      )
+    } else {
+      await db.collection('productoterminados').insertOne({
+        codigo_luminaria: codigoUpper,
+        nombre: nombreProducto,
+        stock_actual: cantidad,
+        stock_minimo: 0,
+        precio_venta: 0,
+        notas: '',
+        foto: '',
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+    }
 
     await registrarAuditoria({ req, accion: 'crear', modulo: 'Produccion', detalle: `Fabricó ${cantidad} unidades de ${codigoUpper}`, dato_id: produccion._id.toString() })
     return NextResponse.json({ ok: true, data: produccion }, { status: 201 })
