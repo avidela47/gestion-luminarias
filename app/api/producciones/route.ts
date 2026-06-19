@@ -89,23 +89,22 @@ export async function POST(req: NextRequest) {
     const nombreProducto = (receta.nombre ?? '').trim() !== '' ? receta.nombre : codigoUpper
 
     await col.updateOne(
-      { codigo_luminaria: codigoUpper },
-      {
-        $inc: { stock_actual: cantidad },
-        $setOnInsert: {
-          codigo_luminaria: codigoUpper,
-          nombre: nombreProducto,
-          stock_minimo: 0,
-          precio_venta: 0,
-          notas: '',
-          foto: '',
-          activo: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      },
-      { upsert: true }
-    )
+  { codigo_luminaria: codigoUpper },
+  {
+    $inc: { stock_actual: cantidad },
+    $set: { activo: true, updatedAt: new Date() },
+    $setOnInsert: {
+      codigo_luminaria: codigoUpper,
+      nombre: nombreProducto,
+      stock_minimo: 0,
+      precio_venta: 0,
+      notas: '',
+      foto: '',
+      createdAt: new Date(),
+    },
+  },
+  { upsert: true }
+)
 
     await registrarAuditoria({ req, accion: 'crear', modulo: 'Produccion', detalle: `Fabricó ${cantidad} unidades de ${codigoUpper}`, dato_id: produccion._id.toString() })
     return NextResponse.json({ ok: true, data: produccion }, { status: 201 })
