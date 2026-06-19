@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
     // Usar driver nativo directo
     const codigoUpper = codigo_luminaria.toUpperCase()
     const nombreProducto = (receta.nombre ?? '').trim() !== '' ? receta.nombre : codigoUpper
-    const db = mongoose.connection.db!
+   const db = mongoose.connection.db!
 
     const existe = await db.collection('productoterminados').findOne({ codigo_luminaria: codigoUpper })
 
