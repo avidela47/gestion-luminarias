@@ -32,7 +32,7 @@ export default function VerOrdenPage() {
   const [orden, setOrden] = useState<OrdenTrabajo | null>(null)
   const [loading, setLoading] = useState(true)
   const [ejecutando, setEjecutando] = useState(false)
-  const [resultado, setResultado] = useState<{ ok: boolean; mensaje: string; errores?: string[] } | null>(null)
+  const [resultado, setResultado] = useState<{ ok: boolean; mensaje: string; errores?: string[]; a_fabricar?: { codigo_luminaria: string; descripcion: string; cantidad: number }[] } | null>(null)
   const [confirmarEjecucion, setConfirmarEjecucion] = useState(false)
   const [confirmarEliminar, setConfirmarEliminar] = useState(false)
 
@@ -53,7 +53,7 @@ export default function VerOrdenPage() {
     const data = await res.json()
     setEjecutando(false)
     if (data.ok) {
-      setResultado({ ok: true, mensaje: 'Orden ejecutada correctamente.' })
+      setResultado({ ok: true, mensaje: data.mensaje || 'Orden ejecutada correctamente.', a_fabricar: data.a_fabricar })
       fetch(`/api/ordenes/${id}`)
         .then((r) => r.json())
         .then((d) => { if (d.ok) setOrden(d.data) })
@@ -248,20 +248,52 @@ export default function VerOrdenPage() {
 
         {/* Resultado */}
         {resultado && (
-          <div className="no-print" style={{
-            marginTop: '16px', padding: '16px 20px', borderRadius: '8px', fontSize: '13px',
-            backgroundColor: resultado.ok ? 'var(--success-bg)' : 'var(--danger-bg)',
-            color: resultado.ok ? 'var(--success)' : 'var(--danger)',
-            border: `1px solid ${resultado.ok ? 'var(--success)' : 'var(--danger)'}`,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, marginBottom: resultado.errores?.length ? '8px' : 0 }}>
-              {resultado.ok ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
-              {resultado.mensaje}
+          <>
+            <div className="no-print" style={{
+              marginTop: '16px', padding: '16px 20px', borderRadius: '8px', fontSize: '13px',
+              backgroundColor: resultado.ok ? 'var(--success-bg)' : 'var(--danger-bg)',
+              color: resultado.ok ? 'var(--success)' : 'var(--danger)',
+              border: `1px solid ${resultado.ok ? 'var(--success)' : 'var(--danger)'}`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, marginBottom: resultado.errores?.length ? '8px' : 0 }}>
+                {resultado.ok ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
+                {resultado.mensaje}
+              </div>
+              {resultado.errores?.map((e, i) => (
+                <div key={i} style={{ fontSize: '12px', marginTop: '4px' }}>• {e}</div>
+              ))}
             </div>
-            {resultado.errores?.map((e, i) => (
-              <div key={i} style={{ fontSize: '12px', marginTop: '4px' }}>• {e}</div>
-            ))}
-          </div>
+
+            {resultado.ok && resultado.a_fabricar && resultado.a_fabricar.length > 0 && (
+              <div className="no-print" style={{
+                marginTop: '12px', padding: '16px 20px', borderRadius: '8px',
+                backgroundColor: '#eff6ff', border: '1px solid #4a6fa5',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#4a6fa5', fontSize: '13px', marginBottom: '10px' }}>
+                  <AlertTriangle size={16} />
+                  Falta fabricar — andá a la sección Fabricar y producí estas luminarias:
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #c7d6ec' }}>
+                      <th style={{ textAlign: 'left', padding: '6px 0', color: '#4a6fa5', fontWeight: 600 }}>Código</th>
+                      <th style={{ textAlign: 'left', padding: '6px 0', color: '#4a6fa5', fontWeight: 600 }}>Descripción</th>
+                      <th style={{ textAlign: 'right', padding: '6px 0', color: '#4a6fa5', fontWeight: 600 }}>Cantidad</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resultado.a_fabricar.map((f, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #e0e8f4' }}>
+                        <td style={{ padding: '8px 0', fontWeight: 600, color: '#1a2332' }}>{f.codigo_luminaria}</td>
+                        <td style={{ padding: '8px 0', color: '#475569' }}>{f.descripcion}</td>
+                        <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 700, color: '#1a2332' }}>{f.cantidad}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -281,7 +313,7 @@ export default function VerOrdenPage() {
               Ejecutar {orden.numero}
             </h3>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-              Se descontará stock de depósito y/o se fabricarán los componentes necesarios. Esta acción no se puede deshacer.
+              Se descontará el stock de depósito de lo disponible. Si falta producir, el sistema te mostrará qué fabricar. Esta acción no se puede deshacer.
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <button onClick={() => setConfirmarEjecucion(false)}
