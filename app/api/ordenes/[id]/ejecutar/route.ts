@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db/mongoose'
 import OrdenTrabajo from '@/models/OrdenTrabajo'
-import Receta from '@/models/Receta'
-import Componente from '@/models/Componente'
 import ProductoTerminado from '@/models/ProductoTerminado'
-import Movimiento from '@/models/Movimiento'
-import Produccion from '@/models/Produccion'
+import { registrarAuditoria } from '@/lib/auditoria'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -20,91 +17,61 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ ok: false, error: 'Esta orden ya fue ejecutada' }, { status: 400 })
     }
 
-    const fecha = new Date()
+    // 1. VALIDAR todo el stock de depósito ANTES de descontar nada
     const errores: string[] = []
-    const componentesDescontados: { id_componente: string; cantidad: number }[] = []
-
     for (const linea of orden.lineas) {
-      const { codigo_luminaria, cantidad_stock, cantidad_fabricar } = linea
-
-      if (cantidad_stock > 0) {
-        const producto = await ProductoTerminado.findOne({ codigo_luminaria })
-        if (!producto || producto.stock_actual < cantidad_stock) {
-          errores.push(`Stock insuficiente de ${codigo_luminaria} en depósito`)
-          continue
+      if (linea.cantidad_stock > 0) {
+        const producto = await ProductoTerminado.findOne({ codigo_luminaria: linea.codigo_luminaria })
+        const disponible = producto?.stock_actual ?? 0
+        if (disponible < linea.cantidad_stock) {
+          errores.push(`${linea.codigo_luminaria}: necesitás ${linea.cantidad_stock} en depósito, hay ${disponible}`)
         }
-        await ProductoTerminado.findOneAndUpdate(
-          { codigo_luminaria },
-          { $inc: { stock_actual: -cantidad_stock } }
-        )
-      }
-
-      if (cantidad_fabricar > 0) {
-        const receta = await Receta.findOne({ codigo: codigo_luminaria, activa: true })
-        if (!receta) {
-          errores.push(`No existe receta activa para ${codigo_luminaria}`)
-          continue
-        }
-
-        for (const item of receta.componentes) {
-          const comp = await Componente.findOne({ id_componente: item.id_componente })
-          const necesario = item.cantidad * cantidad_fabricar
-          if (!comp || comp.stock_actual < necesario) {
-            errores.push(`Stock insuficiente de ${item.id_componente} para fabricar ${codigo_luminaria}`)
-          }
-        }
-
-        if (errores.length > 0) continue
-
-        for (const item of receta.componentes) {
-          const cantDesc = item.cantidad * cantidad_fabricar
-          const comp = await Componente.findOneAndUpdate(
-            { id_componente: item.id_componente },
-            { $inc: { stock_actual: -cantDesc } },
-            { new: true }
-          )
-          componentesDescontados.push({ id_componente: item.id_componente, cantidad: cantDesc })
-
-          const idMov = `MOV-${fecha.getFullYear()}-${Date.now()}-${item.id_componente}`
-          await Movimiento.create({
-            id_movimiento: idMov,
-            tipo: 'salida_produccion',
-            id_componente: item.id_componente,
-            cantidad: -cantDesc,
-            stock_resultante: comp!.stock_actual,
-            referencia: orden.numero,
-            notas: `OT ${orden.numero} — ${codigo_luminaria} x${cantidad_fabricar}`,
-            usuario: orden.vendedor || 'admin',
-          })
-        }
-
-        const idProd = `PROD-${fecha.getFullYear()}-${Date.now()}-OT`
-        await Produccion.create({
-          id_produccion: idProd,
-          codigo_luminaria,
-          version_receta: receta.version,
-          cantidad: cantidad_fabricar,
-          operario: orden.vendedor || 'admin',
-          notas: `OT ${orden.numero}`,
-          componentes_descontados: componentesDescontados,
-        })
       }
     }
 
     if (errores.length > 0) {
-      return NextResponse.json({ ok: false, error: 'Errores al ejecutar', errores }, { status: 400 })
+      return NextResponse.json({ ok: false, error: 'Stock de depósito insuficiente', errores }, { status: 400 })
     }
 
-    // Solo marca como ejecutada, NO cambia el estado
-    await OrdenTrabajo.findByIdAndUpdate(id, {
-      $set: {
-        ejecutada: true,
-        fecha_ejecucion: fecha,
+    // 2. DESCONTAR del depósito (ya validado, seguro)
+    for (const linea of orden.lineas) {
+      if (linea.cantidad_stock > 0) {
+        await ProductoTerminado.findOneAndUpdate(
+          { codigo_luminaria: linea.codigo_luminaria },
+          { $inc: { stock_actual: -linea.cantidad_stock } }
+        )
       }
+    }
+
+    // 3. ARMAR el resumen de lo que falta fabricar (NO fabrica, solo informa)
+    const aFabricar = orden.lineas
+      .filter((l: { cantidad_fabricar: number }) => l.cantidad_fabricar > 0)
+      .map((l: { codigo_luminaria: string; descripcion: string; cantidad_fabricar: number }) => ({
+        codigo_luminaria: l.codigo_luminaria,
+        descripcion: l.descripcion,
+        cantidad: l.cantidad_fabricar,
+      }))
+
+    // 4. Marcar como ejecutada
+    await OrdenTrabajo.findByIdAndUpdate(id, {
+      $set: { ejecutada: true, fecha_ejecucion: new Date() },
     })
 
-    return NextResponse.json({ ok: true, mensaje: 'Orden ejecutada correctamente' })
-  } catch {
+    await registrarAuditoria({
+      req,
+      accion: 'editar',
+      modulo: 'Ordenes',
+      detalle: `Ejecutó OT ${orden.numero} — descontó depósito${aFabricar.length > 0 ? `, pendiente fabricar ${aFabricar.length} ítem(s)` : ''}`,
+      dato_id: id,
+    })
+
+    const mensaje = aFabricar.length > 0
+      ? 'Orden ejecutada. Se descontó el stock de depósito. Quedan ítems para fabricar (ver detalle).'
+      : 'Orden ejecutada. Se descontó todo del stock de depósito.'
+
+    return NextResponse.json({ ok: true, mensaje, a_fabricar: aFabricar })
+  } catch (e) {
+    console.error('[ejecutar OT] error:', e)
     return NextResponse.json({ ok: false, error: 'Error al ejecutar orden' }, { status: 500 })
   }
 }
