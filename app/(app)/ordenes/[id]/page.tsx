@@ -281,7 +281,7 @@ export default function VerOrdenPage() {
               ))}
             </div>
 
-           {resultado.ok && resultado.a_fabricar && resultado.a_fabricar.length > 0 && (
+           {resultado && resultado.a_fabricar && resultado.a_fabricar.length > 0 && (
               <div className="no-print" style={{ marginTop: '12px', padding: '16px 20px', borderRadius: '8px', backgroundColor: '#eff6ff', border: '1px solid #4a6fa5' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#4a6fa5', fontSize: '13px' }}>
