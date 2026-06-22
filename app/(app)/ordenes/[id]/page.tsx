@@ -72,7 +72,7 @@ export default function VerOrdenPage() {
     const data = await res.json()
     setEjecutando(false)
     if (data.ok) {
-      setResultado({ ok: true, mensaje: data.mensaje || 'Orden ejecutada correctamente.', a_fabricar: data.a_fabricar, en_stock: data.en_stock })
+      setResultado({ ok: false, mensaje: data.error, errores: data.errores, a_fabricar: data.a_fabricar, en_stock: data.en_stock })
       fetch(`/api/ordenes/${id}`)
         .then((r) => r.json())
         .then((d) => { if (d.ok) setOrden(d.data) })
@@ -281,7 +281,7 @@ export default function VerOrdenPage() {
               ))}
             </div>
 
-           {resultado && resultado.a_fabricar && resultado.a_fabricar.length > 0 && (
+           {resultado && resultado.en_stock && resultado.en_stock.length > 0 && (
               <div className="no-print" style={{ marginTop: '12px', padding: '16px 20px', borderRadius: '8px', backgroundColor: '#eff6ff', border: '1px solid #4a6fa5' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#4a6fa5', fontSize: '13px' }}>
@@ -302,7 +302,7 @@ export default function VerOrdenPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {resultado.a_fabricar.map((f, i) => (
+                    {(resultado.a_fabricar ?? []).map((f, i) => (
                       <tr key={i} style={{ borderBottom: '1px solid #e0e8f4' }}>
                         <td style={{ padding: '8px 0', fontWeight: 600, color: '#1a2332' }}>{f.codigo_luminaria}</td>
                         <td style={{ padding: '8px 0', color: '#475569' }}>{f.descripcion}</td>
