@@ -79,3 +79,4 @@ Probá cada paso en orden. Si algo falla, anotá **qué paso** y **qué pasó**.
 **Si los marcaste todos → el sistema está listo para producción.**
 
 *Cualquier paso que falle: anotá el número y qué pasó, y se corrige puntual.*
+-----
