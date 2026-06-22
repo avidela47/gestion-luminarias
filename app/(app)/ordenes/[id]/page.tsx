@@ -30,19 +30,38 @@ export default function VerOrdenPage() {
   const { id } = useParams()
   const router = useRouter()
   const [orden, setOrden] = useState<OrdenTrabajo | null>(null)
-  const [loading, setLoading] = useState(true)
+  
+  // Inicialización dinámica: define el estado inicial correcto sin disparar efectos secundarios
+  const [loading, setLoading] = useState(() => {
+    return !!(id && id !== 'nueva' && id !== 'undefined')
+  })
+  
   const [ejecutando, setEjecutando] = useState(false)
   const [resultado, setResultado] = useState<{ ok: boolean; mensaje: string; errores?: string[]; a_fabricar?: { codigo_luminaria: string; descripcion: string; cantidad: number }[] } | null>(null)
   const [confirmarEjecucion, setConfirmarEjecucion] = useState(false)
   const [confirmarEliminar, setConfirmarEliminar] = useState(false)
 
+  // Trackear el ID actual para resetear el loading asíncronamente si cambia el parámetro en caliente
+  const [currentId, setCurrentId] = useState(id)
+
+  if (id !== currentId) {
+    setCurrentId(id)
+    setLoading(!!(id && id !== 'nueva' && id !== 'undefined'))
+    setOrden(null)
+  }
+
   useEffect(() => {
+    if (!id || id === 'nueva' || id === 'undefined') {
+      return
+    }
+
     fetch(`/api/ordenes/${id}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.ok) setOrden(data.data)
         setLoading(false)
       })
+      .catch(() => setLoading(false))
   }, [id])
 
   const ejecutar = async () => {
