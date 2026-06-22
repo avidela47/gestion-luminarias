@@ -37,7 +37,7 @@ export default function VerOrdenPage() {
   })
   
   const [ejecutando, setEjecutando] = useState(false)
-  const [resultado, setResultado] = useState<{ ok: boolean; mensaje: string; errores?: string[]; a_fabricar?: { codigo_luminaria: string; descripcion: string; cantidad: number }[] } | null>(null)
+  const [resultado, setResultado] = useState<{ ok: boolean; mensaje: string; errores?: string[]; a_fabricar?: { codigo_luminaria: string; descripcion: string; cantidad: number }[]; en_stock?: { codigo: string; descripcion: string; cantidad: number; tipo: string }[] } | null>(null)
   const [confirmarEjecucion, setConfirmarEjecucion] = useState(false)
   const [confirmarEliminar, setConfirmarEliminar] = useState(false)
 
@@ -72,7 +72,7 @@ export default function VerOrdenPage() {
     const data = await res.json()
     setEjecutando(false)
     if (data.ok) {
-      setResultado({ ok: true, mensaje: data.mensaje || 'Orden ejecutada correctamente.', a_fabricar: data.a_fabricar })
+      setResultado({ ok: true, mensaje: data.mensaje || 'Orden ejecutada correctamente.', a_fabricar: data.a_fabricar, en_stock: data.en_stock })
       fetch(`/api/ordenes/${id}`)
         .then((r) => r.json())
         .then((d) => { if (d.ok) setOrden(d.data) })
@@ -228,9 +228,7 @@ export default function VerOrdenPage() {
                 <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '12px', fontWeight: 600 }}>Código</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '12px', fontWeight: 600 }}>Descripción</th>
                 <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>Cantidad total</th>
-                <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>Desde depósito</th>
-                <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>A fabricar</th>
-              </tr>
+                </tr>
             </thead>
             <tbody>
               {orden.lineas.map((l, i) => (
@@ -283,14 +281,17 @@ export default function VerOrdenPage() {
               ))}
             </div>
 
-            {resultado.ok && resultado.a_fabricar && resultado.a_fabricar.length > 0 && (
-              <div className="no-print" style={{
-                marginTop: '12px', padding: '16px 20px', borderRadius: '8px',
-                backgroundColor: '#eff6ff', border: '1px solid #4a6fa5',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#4a6fa5', fontSize: '13px', marginBottom: '10px' }}>
-                  <AlertTriangle size={16} />
-                  Falta fabricar — andá a la sección Fabricar y producí estas luminarias:
+           {resultado.ok && resultado.a_fabricar && resultado.a_fabricar.length > 0 && (
+              <div className="no-print" style={{ marginTop: '12px', padding: '16px 20px', borderRadius: '8px', backgroundColor: '#eff6ff', border: '1px solid #4a6fa5' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#4a6fa5', fontSize: '13px' }}>
+                    <AlertTriangle size={16} />
+                    Falta fabricar — producí estas luminarias antes de despachar:
+                  </div>
+                  <button onClick={() => router.push('/fabricar')}
+                    style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, backgroundColor: '#4a6fa5', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                    Ir a Fabricar →
+                  </button>
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
