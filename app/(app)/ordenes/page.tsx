@@ -81,7 +81,7 @@ const eliminar = async (id: string) => {
           </p>
         </div>
         <button
-          onClick={() => router.push('/ordenes/nueva')}
+          onClick={() => router.push('/ordenes/crear')}
           style={{
             display: 'flex', alignItems: 'center', gap: '8px',
             backgroundColor: 'var(--primary)', color: '#fff',
