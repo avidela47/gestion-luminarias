@@ -1,311 +1,431 @@
 'use client'
 
-import { Suspense } from 'react'
 import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { Plus, Trash2, ArrowLeft } from 'lucide-react'
+import { useParams, useRouter } from 'next/navigation'
+import { ArrowLeft, Play, CheckCircle, AlertTriangle, Printer, Trash2 } from 'lucide-react'
 import { EMPRESA } from '@/lib/constants'
 
-interface Cliente {
-  id_cliente: string
-  nombre: string
-  razon_social: string
-}
-
-interface Presupuesto {
+interface OrdenTrabajo {
   _id: string
   numero: string
+  fecha: string
+  fecha_entrega: string
+  numero_presupuesto: string
   razon_social: string
-  id_cliente: string
+  vendedor: string
+  lineas: {
+    codigo_luminaria: string
+    descripcion: string
+    cantidad: number
+  }[]
   estado: string
-  lineas: { codigo: string; descripcion: string; cantidad: number }[]
+  notas: string
+  ejecutada: boolean
+  fecha_ejecucion: string
 }
 
-interface ProductoTerminado {
-  codigo_luminaria: string
-  stock_actual: number
-}
-
-interface Linea {
+interface ItemFabricar {
   codigo_luminaria: string
   descripcion: string
   cantidad: number
-  cantidad_stock: number
-  cantidad_fabricar: number
 }
 
-function NuevaOrdenForm() {
+interface ItemStock {
+  codigo: string
+  descripcion: string
+  cantidad: number
+  tipo: string
+}
+
+interface Resultado {
+  ok: boolean
+  mensaje: string
+  errores?: string[]
+  a_fabricar?: ItemFabricar[]
+  en_stock?: ItemStock[]
+}
+
+export default function VerOrdenPage() {
+  const { id } = useParams()
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const presupuestoId = searchParams.get('presupuesto')
-
-  const [clientes, setClientes] = useState<Cliente[]>([])
-  const [presupuestos, setPresupuestos] = useState<Presupuesto[]>([])
-  const [productosTerminados, setProductosTerminados] = useState<ProductoTerminado[]>([])
-  const [clienteId, setClienteId] = useState('')
-  const [razonSocial, setRazonSocial] = useState('')
-  const [presupuestoSeleccionado, setPresupuestoSeleccionado] = useState<Presupuesto | null>(null)
-  const [fechaEntrega, setFechaEntrega] = useState('')
-  const [notas, setNotas] = useState('')
-  const [lineas, setLineas] = useState<Linea[]>([])
-  const [guardando, setGuardando] = useState(false)
-  const [error, setError] = useState('')
-
-  const buildLineas = (p: Presupuesto, productos: ProductoTerminado[]): Linea[] =>
-    p.lineas.map((l) => {
-      const prod = productos.find((pt) => pt.codigo_luminaria === l.codigo)
-      const stockDisponible = prod ? Math.min(prod.stock_actual, l.cantidad) : 0
-      const fabricar = l.cantidad - stockDisponible
-      return {
-        codigo_luminaria: l.codigo,
-        descripcion: l.descripcion,
-        cantidad: l.cantidad,
-        cantidad_stock: stockDisponible,
-        cantidad_fabricar: fabricar > 0 ? fabricar : 0,
-      }
-    })
+  const [orden, setOrden] = useState<OrdenTrabajo | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [ejecutando, setEjecutando] = useState(false)
+  const [resultado, setResultado] = useState<Resultado | null>(null)
+  const [confirmarEjecucion, setConfirmarEjecucion] = useState(false)
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false)
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/clientes').then((r) => r.json()),
-      fetch('/api/presupuestos').then((r) => r.json()),
-      fetch('/api/productos').then((r) => r.json()),
-    ]).then(([clientesData, presupuestosData, productosData]) => {
-      if (clientesData.ok) setClientes(clientesData.data)
-      if (presupuestosData.ok) {
-        const aprobados = presupuestosData.data.filter((p: Presupuesto) => p.estado === 'Aprobado')
-        setPresupuestos(aprobados)
-        if (presupuestoId) {
-          const p = presupuestosData.data.find((p: Presupuesto) => p._id === presupuestoId)
-          if (p) {
-            setPresupuestoSeleccionado(p)
-            setClienteId(p.id_cliente)
-            setRazonSocial(p.razon_social)
-            setLineas(buildLineas(p, productosData.data))
-          }
-        }
-      }
-      if (productosData.ok) setProductosTerminados(productosData.data)
-    })
-  }, [presupuestoId])
+    fetch(`/api/ordenes/${id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok) setOrden(data.data)
+        setLoading(false)
+      })
+  }, [id])
 
-  const seleccionarPresupuesto = (id: string) => {
-    const p = presupuestos.find((p) => p._id === id)
-    if (p) {
-      setPresupuestoSeleccionado(p)
-      setClienteId(p.id_cliente)
-      setRazonSocial(p.razon_social)
-      setLineas(buildLineas(p, productosTerminados))
+  const ejecutar = async () => {
+    setConfirmarEjecucion(false)
+    setEjecutando(true)
+    setResultado(null)
+    const res = await fetch(`/api/ordenes/${id}/ejecutar`, { method: 'POST' })
+    const data = await res.json()
+    setEjecutando(false)
+    if (data.ok) {
+      setResultado({
+        ok: true,
+        mensaje: data.mensaje || 'Orden ejecutada correctamente.',
+        a_fabricar: data.a_fabricar,
+        en_stock: data.en_stock,
+      })
+      fetch(`/api/ordenes/${id}`)
+        .then((r) => r.json())
+        .then((d) => { if (d.ok) setOrden(d.data) })
+    } else {
+      setResultado({ ok: false, mensaje: data.error, errores: data.errores })
     }
   }
 
-  const agregarLinea = () => {
-    setLineas((prev) => [...prev, {
-      codigo_luminaria: '', descripcion: '', cantidad: 1,
-      cantidad_stock: 0, cantidad_fabricar: 1,
-    }])
-  }
-
-  const actualizarLinea = (i: number, campo: string, valor: string | number) => {
-    setLineas((prev) => prev.map((l, idx) => {
-      if (idx !== i) return l
-      const updated = { ...l, [campo]: valor }
-      if (campo === 'cantidad_stock' || campo === 'cantidad') {
-        updated.cantidad_fabricar = Math.max(0, updated.cantidad - updated.cantidad_stock)
-      }
-      return updated
-    }))
-  }
-
-  const quitarLinea = (i: number) => setLineas((prev) => prev.filter((_, idx) => idx !== i))
-
-  const guardar = async () => {
-    setError('')
-    if (!clienteId) return setError('Seleccioná un cliente')
-    if (lineas.length === 0) return setError('Agregá al menos una luminaria')
-    const invalidas = lineas.some((l) => !l.codigo_luminaria || l.cantidad < 1)
-    if (invalidas) return setError('Completá código y cantidad en todas las líneas')
-
-    setGuardando(true)
-    const res = await fetch('/api/ordenes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id_cliente: clienteId,
-        razon_social: razonSocial,
-        vendedor: EMPRESA.vendedor_default,
-        id_presupuesto: presupuestoSeleccionado?._id ?? '',
-        numero_presupuesto: presupuestoSeleccionado?.numero ?? '',
-        fecha_entrega: fechaEntrega || null,
-        lineas,
-        notas,
-      }),
-    })
-
+  const eliminar = async () => {
+    const res = await fetch(`/api/ordenes/${id}`, { method: 'DELETE' })
     const data = await res.json()
-    setGuardando(false)
-    if (!data.ok) return setError(data.error || 'Error al guardar')
-    router.push(`/ordenes/${data.data._id}`)
+    if (data.ok) {
+      router.push('/ordenes')
+    } else {
+      setResultado({ ok: false, mensaje: data.error })
+      setConfirmarEliminar(false)
+    }
   }
 
-  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' } as const
-  const inputStyle = {
-    width: '100%', padding: '8px 10px',
-    border: '1px solid var(--border)', borderRadius: '6px',
-    fontSize: '13px', backgroundColor: 'var(--input-bg)',
-    color: 'var(--text-primary)', outline: 'none',
-  } as const
+  if (loading) return <div style={{ padding: '32px', color: 'var(--text-muted)' }}>Cargando...</div>
+  if (!orden) return <div style={{ padding: '32px', color: 'var(--danger)' }}>Orden no encontrada</div>
+
+  const estadoColor: Record<string, string> = {
+    Pendiente: 'var(--warning)',
+    'En proceso': 'var(--secondary)',
+    Completada: 'var(--success)',
+    Cancelada: 'var(--danger)',
+  }
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1000px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+    <>
+      {/* Barra acciones */}
+      <div className="no-print" style={{
+        padding: '16px 32px', borderBottom: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', gap: '12px',
+        backgroundColor: 'var(--card-bg)',
+      }}>
         <button onClick={() => router.push('/ordenes')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}>
           <ArrowLeft size={20} />
         </button>
-        <div>
-          <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)' }}>Nueva Orden de Trabajo</h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            El número se asigna automáticamente al guardar
-          </p>
+        <div style={{ flex: 1 }}>
+          <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            {orden.numero}
+          </span>
+          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', marginLeft: '12px' }}>
+            {orden.razon_social} {orden.numero_presupuesto ? `— Presupuesto ${orden.numero_presupuesto}` : ''}
+          </span>
         </div>
-      </div>
-
-      <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px' }}>Cliente</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <div>
-            <label style={labelStyle}>CLIENTE *</label>
-            <select value={clienteId} onChange={(e) => {
-              const c = clientes.find((c) => c.id_cliente === e.target.value)
-              setClienteId(e.target.value)
-              setRazonSocial(c?.razon_social || c?.nombre || '')
-              setPresupuestoSeleccionado(null)
-              setLineas([])
-            }} style={inputStyle}>
-              <option value="">Seleccionar cliente...</option>
-              {clientes.map((c) => (
-                <option key={c.id_cliente} value={c.id_cliente}>{c.nombre}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label style={labelStyle}>PRESUPUESTO APROBADO (opcional)</label>
-            <select
-              value={presupuestoSeleccionado?._id ?? ''}
-              onChange={(e) => seleccionarPresupuesto(e.target.value)}
-              style={inputStyle}
-            >
-              <option value="">Sin presupuesto asociado</option>
-              {presupuestos.map((p) => (
-                <option key={p._id} value={p._id}>{p.numero} — {p.razon_social}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
-          <div>
-            <label style={labelStyle}>FECHA DE ENTREGA</label>
-            <input type="date" value={fechaEntrega} onChange={(e) => setFechaEntrega(e.target.value)} style={inputStyle} />
-          </div>
-          <div>
-            <label style={labelStyle}>NOTAS</label>
-            <input type="text" value={notas} onChange={(e) => setNotas(e.target.value)}
-              placeholder="Observaciones internas" style={inputStyle} />
-          </div>
-        </div>
-      </div>
-
-      <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Luminarias</h2>
-          <button onClick={agregarLinea}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '13px', fontWeight: 600, color: 'var(--primary)',
-              background: 'none', border: 'none', cursor: 'pointer',
-            }}>
-            <Plus size={15} /> Agregar línea
-          </button>
-        </div>
-
-        {lineas.length === 0 ? (
-          <div style={{ padding: '24px', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)', border: '1px dashed var(--border)', borderRadius: '8px' }}>
-            Seleccioná un presupuesto aprobado o agregá líneas manualmente.
-          </div>
-        ) : (
+        <span style={{
+          fontSize: '12px', fontWeight: 600, padding: '4px 12px', borderRadius: '6px',
+          backgroundColor: `${estadoColor[orden.estado]}18`,
+          color: estadoColor[orden.estado],
+        }}>
+          {orden.estado}
+        </span>
+        <button onClick={() => window.print()}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            backgroundColor: 'transparent', color: 'var(--text-secondary)',
+            border: '1px solid var(--border)', borderRadius: '8px',
+            padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+          }}>
+          <Printer size={15} /> Imprimir
+        </button>
+        {!orden.ejecutada && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 80px 100px 110px 36px', gap: '8px', marginBottom: '8px' }}>
-              {['Código', 'Descripción', 'Total', 'Desde stock', 'A fabricar', ''].map((h) => (
-                <div key={h} style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>{h}</div>
+            <button onClick={() => setConfirmarEliminar(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                backgroundColor: 'transparent', color: 'var(--danger)',
+                border: '1px solid var(--danger)', borderRadius: '8px',
+                padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+              }}>
+              <Trash2 size={15} /> Eliminar
+            </button>
+            <button onClick={() => setConfirmarEjecucion(true)} disabled={ejecutando}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                backgroundColor: 'var(--primary)', color: '#fff',
+                border: 'none', borderRadius: '8px',
+                padding: '9px 16px', fontSize: '13px', fontWeight: 600,
+                cursor: ejecutando ? 'not-allowed' : 'pointer',
+                opacity: ejecutando ? 0.7 : 1,
+              }}>
+              <Play size={15} />
+              {ejecutando ? 'Ejecutando...' : 'Ejecutar orden'}
+            </button>
+          </>
+        )}
+        {orden.ejecutada && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--success)', fontSize: '13px', fontWeight: 600 }}>
+            <CheckCircle size={16} />
+            Ejecutada el {new Date(orden.fecha_ejecucion).toLocaleDateString('es-AR')}
+          </div>
+        )}
+      </div>
+
+      {/* Documento imprimible */}
+      <div style={{ padding: '32px', maxWidth: '900px', margin: '0 auto' }}>
+        <div style={{
+          backgroundColor: '#fff', border: '1px solid var(--border)',
+          borderRadius: '8px', padding: '40px',
+          fontFamily: 'Arial, sans-serif', fontSize: '13px', color: '#1a2332',
+        }}>
+          {/* Encabezado */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+            <div>
+              <div style={{ fontSize: '20px', fontWeight: 800, color: '#2d7d78', letterSpacing: '1px' }}>
+                {EMPRESA.razon_social}
+              </div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>{EMPRESA.domicilio}</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>{EMPRESA.localidad}, {EMPRESA.provincia}</div>
+              <div style={{ fontSize: '12px', color: '#64748b' }}>Tel: {EMPRESA.telefono}</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#1a2332' }}>ORDEN DE TRABAJO</div>
+              <div style={{ fontSize: '20px', fontWeight: 700, color: '#2d7d78', marginTop: '4px' }}>
+                {orden.numero}
+              </div>
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
+                Fecha: {new Date(orden.fecha).toLocaleDateString('es-AR')}
+              </div>
+              {orden.fecha_entrega && (
+                <div style={{ fontSize: '12px', color: '#64748b' }}>
+                  Entrega: {new Date(orden.fecha_entrega).toLocaleDateString('es-AR')}
+                </div>
+              )}
+              <div style={{ fontSize: '12px', color: '#64748b' }}>Vendedor: {orden.vendedor}</div>
+            </div>
+          </div>
+
+          <div style={{ borderTop: '2px solid #2d7d78', marginBottom: '24px' }} />
+
+          {/* Cliente */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '6px', letterSpacing: '1px' }}>
+              CLIENTE
+            </div>
+            <div style={{ fontWeight: 700, fontSize: '15px' }}>{orden.razon_social}</div>
+            {orden.numero_presupuesto && (
+              <div style={{ fontSize: '12px', color: '#64748b' }}>Presupuesto de referencia: {orden.numero_presupuesto}</div>
+            )}
+            {orden.notas && (
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Notas: {orden.notas}</div>
+            )}
+          </div>
+
+          {/* Tabla */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '24px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#0f1923', color: '#fff' }}>
+                <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '12px', fontWeight: 600 }}>Código</th>
+                <th style={{ padding: '10px 12px', textAlign: 'left', fontSize: '12px', fontWeight: 600 }}>Descripción</th>
+                <th style={{ padding: '10px 12px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>Cantidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orden.lineas.map((l, i) => (
+                <tr key={i} style={{ backgroundColor: i % 2 === 0 ? '#f8fafc' : '#fff', borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 600, fontSize: '12px' }}>{l.codigo_luminaria}</td>
+                  <td style={{ padding: '10px 12px', fontSize: '12px' }}>{l.descripcion}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, fontSize: '13px' }}>{l.cantidad}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Pie */}
+          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>
+              Estado: <b>{orden.estado}</b>
+              {orden.ejecutada && ` — Ejecutada el ${new Date(orden.fecha_ejecucion).toLocaleDateString('es-AR')}`}
+            </div>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>
+              Firma recepción: _______________________
+            </div>
+          </div>
+        </div>
+
+        {/* Resultado */}
+        {resultado && (
+          <>
+            <div className="no-print" style={{
+              marginTop: '16px', padding: '16px 20px', borderRadius: '8px', fontSize: '13px',
+              backgroundColor: resultado.ok ? 'var(--success-bg)' : 'var(--danger-bg)',
+              color: resultado.ok ? 'var(--success)' : 'var(--danger)',
+              border: `1px solid ${resultado.ok ? 'var(--success)' : 'var(--danger)'}`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, marginBottom: resultado.errores?.length ? '8px' : 0 }}>
+                {resultado.ok ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
+                {resultado.mensaje}
+              </div>
+              {resultado.errores?.map((e, i) => (
+                <div key={i} style={{ fontSize: '12px', marginTop: '4px' }}>• {e}</div>
               ))}
             </div>
-            {lineas.map((l, i) => (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '140px 1fr 80px 100px 110px 36px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                <input type="text" value={l.codigo_luminaria}
-                  onChange={(e) => actualizarLinea(i, 'codigo_luminaria', e.target.value)}
-                  placeholder="Código" style={{ ...inputStyle, fontSize: '12px' }} />
-                <input type="text" value={l.descripcion}
-                  onChange={(e) => actualizarLinea(i, 'descripcion', e.target.value)}
-                  placeholder="Descripción" style={{ ...inputStyle, fontSize: '12px' }} />
-                <input type="number" min={1} value={l.cantidad}
-                  onChange={(e) => actualizarLinea(i, 'cantidad', Number(e.target.value))}
-                  style={{ ...inputStyle, fontSize: '12px' }} />
-                <input type="number" min={0} value={l.cantidad_stock}
-                  onChange={(e) => actualizarLinea(i, 'cantidad_stock', Number(e.target.value))}
-                  style={{ ...inputStyle, fontSize: '12px', backgroundColor: 'var(--success-bg)' }} />
-                <input type="number" min={0} value={l.cantidad_fabricar}
-                  onChange={(e) => actualizarLinea(i, 'cantidad_fabricar', Number(e.target.value))}
-                  style={{ ...inputStyle, fontSize: '12px', backgroundColor: 'var(--info-bg)' }} />
-                <button onClick={() => quitarLinea(i)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: '4px' }}>
-                  <Trash2 size={15} />
-                </button>
+
+            {resultado.ok && resultado.en_stock && resultado.en_stock.length > 0 && (
+              <div className="no-print" style={{
+                marginTop: '12px', padding: '16px 20px', borderRadius: '8px',
+                backgroundColor: '#f0fdf4', border: '1px solid #16a34a',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#16a34a', fontSize: '13px', marginBottom: '10px' }}>
+                  <CheckCircle size={16} />
+                  Disponible en stock — listo para despachar:
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #bbf7d0' }}>
+                      <th style={{ textAlign: 'left', padding: '6px 0', color: '#16a34a', fontWeight: 600 }}>Código</th>
+                      <th style={{ textAlign: 'left', padding: '6px 0', color: '#16a34a', fontWeight: 600 }}>Descripción</th>
+                      <th style={{ textAlign: 'right', padding: '6px 0', color: '#16a34a', fontWeight: 600 }}>Cantidad</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resultado.en_stock.map((s, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #dcfce7' }}>
+                        <td style={{ padding: '8px 0', fontWeight: 600, color: '#1a2332' }}>{s.codigo}</td>
+                        <td style={{ padding: '8px 0', color: '#475569' }}>{s.descripcion}</td>
+                        <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 700, color: '#1a2332' }}>{s.cantidad}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
-            <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-muted)' }}>
-              <span style={{ backgroundColor: 'var(--success-bg)', padding: '2px 8px', borderRadius: '4px', marginRight: '8px' }}>Verde = desde depósito</span>
-              <span style={{ backgroundColor: 'var(--info-bg)', padding: '2px 8px', borderRadius: '4px' }}>Azul = a fabricar</span>
-            </div>
+            )}
+
+            {resultado.ok && resultado.a_fabricar && resultado.a_fabricar.length > 0 && (
+              <div className="no-print" style={{
+                marginTop: '12px', padding: '16px 20px', borderRadius: '8px',
+                backgroundColor: '#eff6ff', border: '1px solid #4a6fa5',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#4a6fa5', fontSize: '13px', marginBottom: '10px' }}>
+                  <AlertTriangle size={16} />
+                  Falta fabricar — andá a la sección Fabricar y producí estas luminarias:
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #c7d6ec' }}>
+                      <th style={{ textAlign: 'left', padding: '6px 0', color: '#4a6fa5', fontWeight: 600 }}>Código</th>
+                      <th style={{ textAlign: 'left', padding: '6px 0', color: '#4a6fa5', fontWeight: 600 }}>Descripción</th>
+                      <th style={{ textAlign: 'right', padding: '6px 0', color: '#4a6fa5', fontWeight: 600 }}>Cantidad</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resultado.a_fabricar.map((f, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #e0e8f4' }}>
+                        <td style={{ padding: '8px 0', fontWeight: 600, color: '#1a2332' }}>{f.codigo_luminaria}</td>
+                        <td style={{ padding: '8px 0', color: '#475569' }}>{f.descripcion}</td>
+                        <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 700, color: '#1a2332' }}>{f.cantidad}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </>
         )}
       </div>
 
-      {error && (
+      {/* Modal ejecutar */}
+      {confirmarEjecucion && (
         <div style={{
-          backgroundColor: 'var(--danger-bg)', color: 'var(--danger)',
-          padding: '10px 14px', borderRadius: '6px', fontSize: '13px', marginBottom: '16px',
+          position: 'fixed', inset: 0, zIndex: 200,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {error}
+          <div style={{
+            backgroundColor: 'var(--card-bg)', borderRadius: '12px',
+            padding: '28px', maxWidth: '420px', width: '100%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
+              Ejecutar {orden.numero}
+            </h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+              El sistema revisará el stock disponible y te dirá qué hay para despachar y qué falta fabricar. No descuenta stock — eso ocurre al hacer el Despacho.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button onClick={() => setConfirmarEjecucion(false)}
+                style={{
+                  padding: '8px 16px', borderRadius: '6px', fontSize: '13px',
+                  border: '1px solid var(--border)', backgroundColor: 'transparent',
+                  color: 'var(--text-secondary)', cursor: 'pointer',
+                }}>
+                Cancelar
+              </button>
+              <button onClick={ejecutar}
+                style={{
+                  padding: '8px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+                  border: 'none', backgroundColor: 'var(--primary)', color: '#fff', cursor: 'pointer',
+                }}>
+                Confirmar
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-        <button onClick={() => router.push('/ordenes')}
-          style={{
-            padding: '9px 16px', borderRadius: '8px', fontSize: '13px',
-            border: '1px solid var(--border)', backgroundColor: 'transparent',
-            color: 'var(--text-secondary)', cursor: 'pointer',
+      {/* Modal eliminar */}
+      {confirmarEliminar && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            backgroundColor: 'var(--card-bg)', borderRadius: '12px',
+            padding: '28px', maxWidth: '380px', width: '100%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
           }}>
-          Cancelar
-        </button>
-        <button onClick={guardar} disabled={guardando}
-          style={{
-            padding: '9px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
-            border: 'none', backgroundColor: 'var(--primary)', color: '#fff',
-            cursor: guardando ? 'not-allowed' : 'pointer', opacity: guardando ? 0.7 : 1,
-          }}>
-          {guardando ? 'Guardando...' : 'Crear orden'}
-        </button>
-      </div>
-    </div>
-  )
-}
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
+              Eliminar {orden.numero}
+            </h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+              ¿Confirmás que querés eliminar esta orden? Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button onClick={() => setConfirmarEliminar(false)}
+                style={{
+                  padding: '8px 16px', borderRadius: '6px', fontSize: '13px',
+                  border: '1px solid var(--border)', backgroundColor: 'transparent',
+                  color: 'var(--text-secondary)', cursor: 'pointer',
+                }}>
+                Cancelar
+              </button>
+              <button onClick={eliminar}
+                style={{
+                  padding: '8px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 600,
+                  border: 'none', backgroundColor: 'var(--danger)', color: '#fff', cursor: 'pointer',
+                }}>
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-export default function NuevaOrdenPage() {
-  return (
-    <Suspense fallback={<div style={{ padding: '32px', color: 'var(--text-muted)' }}>Cargando...</div>}>
-      <NuevaOrdenForm />
-    </Suspense>
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          aside { display: none !important; }
+          main { margin-left: 0 !important; }
+          body { background: white !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+      `}</style>
+    </>
   )
 }

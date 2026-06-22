@@ -4,8 +4,6 @@ export interface ILineaOrden {
   codigo_luminaria: string
   descripcion: string
   cantidad: number
-  cantidad_stock: number
-  cantidad_fabricar: number
 }
 
 export interface IOrdenTrabajo extends Document {
@@ -31,8 +29,6 @@ const LineaOrdenSchema = new Schema<ILineaOrden>(
     codigo_luminaria: { type: String, required: true },
     descripcion: { type: String, required: true },
     cantidad: { type: Number, required: true, min: 1 },
-    cantidad_stock: { type: Number, default: 0 },
-    cantidad_fabricar: { type: Number, default: 0 },
   },
   { _id: false }
 )
