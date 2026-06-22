@@ -72,7 +72,7 @@ export default function VerOrdenPage() {
     const data = await res.json()
     setEjecutando(false)
     if (data.ok) {
-      setResultado({ ok: false, mensaje: data.error, errores: data.errores, a_fabricar: data.a_fabricar, en_stock: data.en_stock })
+      setResultado({ ok: true, mensaje: data.error, errores: data.errores, a_fabricar: data.a_fabricar, en_stock: data.en_stock })
       fetch(`/api/ordenes/${id}`)
         .then((r) => r.json())
         .then((d) => { if (d.ok) setOrden(d.data) })
@@ -238,7 +238,7 @@ export default function VerOrdenPage() {
                   <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, fontSize: '13px' }}>{l.cantidad}</td>
                   <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                     <span style={{ backgroundColor: '#f0fdf4', color: '#16a34a', padding: '2px 10px', borderRadius: '4px', fontWeight: 600, fontSize: '12px' }}>
-                      {l.cantidad_stock}
+                      {l.cantidad_fabricar}
                     </span>
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'center' }}>
@@ -281,7 +281,7 @@ export default function VerOrdenPage() {
               ))}
             </div>
 
-           {resultado && resultado.en_stock && resultado.en_stock.length > 0 && (
+           {resultado && resultado.a_fabricar && resultado.a_fabricar.length > 0 && (
               <div className="no-print" style={{ marginTop: '12px', padding: '16px 20px', borderRadius: '8px', backgroundColor: '#eff6ff', border: '1px solid #4a6fa5' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#4a6fa5', fontSize: '13px' }}>
