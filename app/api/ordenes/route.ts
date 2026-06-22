@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db/mongoose'
 import OrdenTrabajo from '@/models/OrdenTrabajo'
-import Counter from '@/models/Counter'
 import { registrarAuditoria } from '@/lib/auditoria'
 
 async function generarNumero(): Promise<string> {
-  const year = new Date().getFullYear()
-  const counter = await Counter.findOneAndUpdate(
-    { _id: `ordenes-${year}` },
-    { $inc: { seq: 1 } },
-    { new: true, upsert: true }
-  )
-  return `OT-${year}-${String(counter.seq).padStart(4, '0')}`
+  const ultima = await OrdenTrabajo.findOne().sort({ createdAt: -1 })
+  if (!ultima?.numero) return `OT-${new Date().getFullYear()}-0001`
+  const partes = ultima.numero.split('-')
+  const num = parseInt(partes[2] ?? '0') + 1
+  return `OT-${new Date().getFullYear()}-${String(num).padStart(4, '0')}`
 }
 
 export async function GET() {
