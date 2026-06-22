@@ -1,6 +1,6 @@
-import mongoose, { Schema, Document } from 'mongoose'
+import mongoose, { Schema } from 'mongoose'
 
-export interface ICounter extends Omit<Document, '_id'> {
+export interface ICounter {
   _id: string
   seq: number
 }
