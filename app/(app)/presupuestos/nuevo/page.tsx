@@ -71,8 +71,8 @@ export default function NuevoPresupuestoPage() {
         })
       }
       if (fabricadasData.ok) {
-        fabricadasData.data.forEach((l: { codigo_luminaria: string; descripcion: string; precio: number }) => {
-          items.push({ codigo: l.codigo_luminaria, descripcion: l.descripcion, precio: l.precio, tipo: 'luminaria_fabricada' })
+        fabricadasData.data.forEach((l: { codigo_luminaria: string; nombre?: string; descripcion?: string; precio_venta?: number; precio?: number }) => {
+          items.push({ codigo: l.codigo_luminaria, descripcion: l.nombre ?? l.descripcion ?? '', precio: l.precio_venta ?? l.precio ?? 0, tipo: 'luminaria_fabricada' })
         })
       }
       setCatalogo(items.sort((a, b) => a.codigo.localeCompare(b.codigo)))
