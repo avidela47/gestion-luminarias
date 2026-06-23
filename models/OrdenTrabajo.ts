@@ -6,6 +6,12 @@ export interface ILineaOrden {
   cantidad: number
 }
 
+export interface IItemDescontado {
+  codigo: string
+  tipo: 'fabricada' | 'comercial' | 'sensor'
+  cantidad: number
+}
+
 export interface IOrdenTrabajo extends Document {
   numero: string
   fecha: Date
@@ -20,6 +26,7 @@ export interface IOrdenTrabajo extends Document {
   notas: string
   ejecutada: boolean
   fecha_ejecucion: Date | null
+  items_descontados: IItemDescontado[]
   createdAt: Date
   updatedAt: Date
 }
@@ -29,6 +36,15 @@ const LineaOrdenSchema = new Schema<ILineaOrden>(
     codigo_luminaria: { type: String, required: true },
     descripcion: { type: String, required: true },
     cantidad: { type: Number, required: true, min: 1 },
+  },
+  { _id: false }
+)
+
+const ItemDescontadoSchema = new Schema<IItemDescontado>(
+  {
+    codigo: { type: String, required: true },
+    tipo: { type: String, enum: ['fabricada', 'comercial', 'sensor'], required: true },
+    cantidad: { type: Number, required: true },
   },
   { _id: false }
 )
@@ -52,6 +68,7 @@ const OrdenTrabajoSchema = new Schema<IOrdenTrabajo>(
     notas: { type: String, default: '' },
     ejecutada: { type: Boolean, default: false },
     fecha_ejecucion: { type: Date, default: null },
+    items_descontados: { type: [ItemDescontadoSchema], default: [] },
   },
   { timestamps: true }
 )
