@@ -150,7 +150,10 @@ const eliminar = async (id: string) => {
                     <td style={{ padding: '10px 16px' }}>
                       <select
                         value={o.estado}
-                        onChange={(e) => cambiarEstado(o._id, e.target.value)}
+                        onChange={(e) => {
+  if (!o.ejecutada) return
+  cambiarEstado(o._id, e.target.value)
+}}
                         style={{
                           fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '4px',
                           backgroundColor: cfg.bg, color: cfg.color,
