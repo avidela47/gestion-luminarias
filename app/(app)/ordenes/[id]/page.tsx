@@ -13,11 +13,7 @@ interface OrdenTrabajo {
   numero_presupuesto: string
   razon_social: string
   vendedor: string
-  lineas: {
-    codigo_luminaria: string
-    descripcion: string
-    cantidad: number
-  }[]
+  lineas: { codigo_luminaria: string; descripcion: string; cantidad: number }[]
   estado: string
   notas: string
   ejecutada: boolean
@@ -32,10 +28,25 @@ interface ResultadoEjecucion {
   en_stock?: { codigo: string; descripcion: string; cantidad: number; tipo: string }[]
 }
 
+interface ComponenteReceta {
+  id_componente: string
+  cantidad_por_unidad: number
+  cantidad_total: number
+}
+
+interface LineaReceta {
+  codigo_luminaria: string
+  descripcion: string
+  cantidad_pedida: number
+  tiene_receta: boolean
+  componentes: ComponenteReceta[]
+}
+
 export default function VerOrdenPage() {
   const { id } = useParams()
   const router = useRouter()
   const [orden, setOrden] = useState<OrdenTrabajo | null>(null)
+  const [recetas, setRecetas] = useState<LineaReceta[]>([])
   const [loading, setLoading] = useState(true)
   const [ejecutando, setEjecutando] = useState(false)
   const [resultado, setResultado] = useState<ResultadoEjecucion | null>(null)
@@ -51,6 +62,9 @@ export default function VerOrdenPage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
+    fetch(`/api/ordenes/${id}/recetas`)
+      .then((r) => r.json())
+      .then((data) => { if (data.ok) setRecetas(data.data) })
   }, [id])
 
   const ejecutar = async () => {
@@ -97,6 +111,7 @@ export default function VerOrdenPage() {
 
   return (
     <>
+      {/* Barra acciones */}
       <div className="no-print" style={{
         padding: '16px 32px', borderBottom: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', gap: '12px',
@@ -157,6 +172,8 @@ export default function VerOrdenPage() {
       </div>
 
       <div style={{ padding: '32px', maxWidth: '900px', margin: '0 auto' }}>
+
+        {/* HOJA 1 — Orden de trabajo */}
         <div style={{
           backgroundColor: '#fff', border: '1px solid var(--border)', borderRadius: '8px', padding: '40px',
           fontFamily: 'Arial, sans-serif', fontSize: '13px', color: '#1a2332',
@@ -223,6 +240,58 @@ export default function VerOrdenPage() {
             <div style={{ fontSize: '12px', color: '#64748b' }}>Firma recepción: _______________________</div>
           </div>
         </div>
+
+        {/* HOJA 2 — Componentes por receta (solo si hay recetas) */}
+        {recetas.some((r) => r.tiene_receta) && (
+          <div style={{
+            backgroundColor: '#fff', border: '1px solid var(--border)', borderRadius: '8px', padding: '40px',
+            fontFamily: 'Arial, sans-serif', fontSize: '13px', color: '#1a2332',
+            marginTop: '24px', pageBreakBefore: 'always',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', paddingBottom: '16px', borderBottom: '2px solid #2d7d78' }}>
+              <div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: '#2d7d78' }}>{EMPRESA.razon_social}</div>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Detalle de componentes por luminaria</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: '#1a2332' }}>ORDEN DE TRABAJO</div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: '#2d7d78' }}>{orden.numero}</div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>{orden.razon_social}</div>
+              </div>
+            </div>
+
+            {recetas.filter((r) => r.tiene_receta).map((r, ri) => (
+              <div key={ri} style={{ marginBottom: '28px' }}>
+                <div style={{
+                  backgroundColor: '#0f1923', color: '#fff', padding: '8px 12px',
+                  borderRadius: '6px', marginBottom: '8px',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}>
+                  <span style={{ fontWeight: 700, fontSize: '13px' }}>{r.codigo_luminaria} — {r.descripcion}</span>
+                  <span style={{ fontSize: '12px', opacity: 0.8 }}>Cantidad pedida: {r.cantidad_pedida}</span>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>Componente</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'center', fontWeight: 600, color: '#64748b' }}>Por unidad</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'center', fontWeight: 600, color: '#64748b' }}>Total ({r.cantidad_pedida} uds)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {r.componentes.map((c, ci) => (
+                      <tr key={ci} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '6px 10px', fontWeight: 500 }}>{c.id_componente}</td>
+                        <td style={{ padding: '6px 10px', textAlign: 'center', color: '#64748b' }}>{c.cantidad_por_unidad}</td>
+                        <td style={{ padding: '6px 10px', textAlign: 'center', fontWeight: 700, color: '#2d7d78' }}>{c.cantidad_total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Paneles resultado */}
         {resultado && (
