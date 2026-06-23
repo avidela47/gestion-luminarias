@@ -4,7 +4,7 @@ export interface IItemDespacho {
   codigo: string
   descripcion: string
   cantidad: number
-  tipo: 'fabricada' | 'comercial' | 'deposito'
+  tipo: 'fabricada' | 'comercial' | 'deposito' | 'sensor'
   precio_unitario: number
 }
 
@@ -27,7 +27,7 @@ const ItemDespachoSchema = new Schema<IItemDespacho>(
     codigo: { type: String, required: true },
     descripcion: { type: String, required: true },
     cantidad: { type: Number, required: true, min: 1 },
-    tipo: { type: String, enum: ['fabricada', 'comercial', 'deposito'], required: true },
+    tipo: { type: String, enum: ['fabricada', 'comercial', 'deposito', 'sensor'], required: true },
     precio_unitario: { type: Number, default: 0 },
   },
   { _id: false }
