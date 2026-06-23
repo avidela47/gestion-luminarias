@@ -61,7 +61,19 @@ export default function VerDespacho({ despacho, onClose, onActualizado }: Props)
                   {procesando ? 'Procesando...' : 'Anular despacho'}
                 </button>
               )}
-              <button onClick={() => window.print()}
+              <button onClick={() => {
+  const contenido = document.getElementById('print-despacho')?.innerHTML
+  if (!contenido) return
+  const ventana = window.open('', '_blank')
+  if (!ventana) return
+  ventana.document.write(`
+    <html><head><title>Despacho ${despacho.numero}</title>
+    <style>body{font-family:Arial,sans-serif;font-size:13px;color:#1a2332;padding:32px}table{width:100%;border-collapse:collapse}th,td{padding:10px 12px}th{background:#0f1923;color:#fff;font-size:12px}tr:nth-child(even){background:#f8fafc}</style>
+    </head><body>${contenido}</body></html>
+  `)
+  ventana.document.close()
+  ventana.print()
+}}
                 style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, backgroundColor: '#0f766e', color: '#fff', border: 'none', cursor: 'pointer' }}>
                 <Printer size={14} /> Imprimir
               </button>
