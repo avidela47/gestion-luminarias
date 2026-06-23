@@ -94,22 +94,37 @@ export default function ComponentesPage() {
         </button>
       </div>
 
-      {/* Buscador */}
-      <div style={{ position: 'relative', marginBottom: '16px', maxWidth: '360px' }}>
-        <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-        <input
-          type="text"
-          placeholder="Buscar por código, nombre o proveedor..."
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          style={{
-            width: '100%', padding: '8px 12px 8px 32px',
-            border: '1px solid var(--border)', borderRadius: '8px',
-            fontSize: '13px', backgroundColor: 'var(--input-bg)',
-            color: 'var(--text-primary)', outline: 'none',
-          }}
-        />
-      </div>
+      {/* Buscador + Monto total */}
+<div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
+  <div style={{ position: 'relative' }}>
+    <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+    <input
+      type="text"
+      placeholder="Buscar por código, nombre o proveedor..."
+      value={busqueda}
+      onChange={(e) => setBusqueda(e.target.value)}
+      style={{
+        width: '360px', padding: '8px 12px 8px 32px',
+        border: '1px solid var(--border)', borderRadius: '8px',
+        fontSize: '13px', backgroundColor: 'var(--input-bg)',
+        color: 'var(--text-primary)', outline: 'none',
+      }}
+    />
+  </div>
+  <div style={{
+    display: 'flex', flexDirection: 'column', gap: '2px',
+    padding: '10px 20px', borderRadius: '10px',
+    backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+  }}>
+    <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '1px', textTransform: 'uppercase' }}>
+      Monto total insumos
+    </span>
+    <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--primary)', lineHeight: 1 }}>
+      U$S {componentes.reduce((acc, c) => acc + (c.precio_unitario * c.stock_actual), 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+    </span>
+  </div>
+</div>
 
       {/* Tabla */}
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', overflow: 'hidden' }}>
@@ -150,7 +165,7 @@ export default function ComponentesPage() {
                     <td style={{ padding: '10px 16px', color: 'var(--text-secondary)' }}>{c.stock_minimo}</td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-secondary)' }}>{c.proveedor || '—'}</td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-secondary)' }}>
-                      {c.precio_unitario > 0 ? `$${c.precio_unitario.toLocaleString('es-AR')}` : '—'}
+                      {c.precio_unitario > 0 ? `U$S ${c.precio_unitario.toLocaleString('es-AR')}` : '—'}
                     </td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-secondary)' }}>{c.ubicacion || '—'}</td>
                     <td style={{ padding: '10px 16px' }}>
