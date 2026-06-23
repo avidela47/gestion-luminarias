@@ -75,7 +75,7 @@ export default function VerDespacho({ despacho, onClose, onActualizado }: Props)
             </div>
           )}
 
-          <div style={{ padding: '32px', fontFamily: 'Arial, sans-serif', fontSize: '13px', color: '#1a2332' }}>
+          <div id="print-despacho" style={{ padding: '32px', fontFamily: 'Arial, sans-serif', fontSize: '13px', color: '#1a2332' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px', paddingBottom: '16px', borderBottom: '2px solid #0f766e' }}>
               <div>
                 <div style={{ fontSize: '20px', fontWeight: 800, color: '#0f766e' }}>{EMPRESA.razon_social}</div>
@@ -139,11 +139,12 @@ export default function VerDespacho({ despacho, onClose, onActualizado }: Props)
       </div>
 
       <style>{`
-        @media print {
-          body > * { display: none !important; }
-          .no-print { display: none !important; }
-        }
-      `}</style>
+  @media print {
+    body > *:not(#print-despacho) { display: none !important; }
+    #print-despacho { display: block !important; position: fixed; top: 0; left: 0; width: 100%; }
+    .no-print { display: none !important; }
+  }
+`}</style>
     </>
   )
 }
