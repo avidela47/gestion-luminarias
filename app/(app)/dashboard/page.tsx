@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Package, AlertTriangle, Factory, TrendingUp, Zap, Wrench, ClipboardCheck } from 'lucide-react'
+import { Package, AlertTriangle, Factory, TrendingUp, Zap, Wrench, ClipboardCheck, Lightbulb } from 'lucide-react'
 
 interface DashboardData {
   totalComponentes: number
@@ -14,6 +14,9 @@ interface DashboardData {
   totalHerramientas: number
   herramientasNoDisponibles: Array<{ codigo: string; nombre: string; estado: string; cantidad_total: number; cantidad_disponible: number }>
   valesAbiertos: Array<{ _id: string; numero: string; responsable: string; estado: string; fecha_salida: string; items: Array<{ descripcion: string; cantidad_salida: number; cantidad_devuelta: number }> }>
+  totalLuminariasFabricadas: number
+  totalLuminariasComerciales: number
+  totalLuminariasDeposito: number
 }
 
 function StatCard({ titulo, valor, subtitulo, icon: Icon, color }: {
@@ -75,12 +78,32 @@ export default function DashboardPage() {
         <StatCard titulo="Sensores y Fuentes" valor={data?.totalSensores ?? 0} subtitulo="productos activos" icon={Zap} color="var(--info)" />
         <StatCard titulo="Herramientas" valor={data?.totalHerramientas ?? 0} subtitulo={`${data?.herramientasNoDisponibles.length ?? 0} no disponibles`} icon={Wrench} color="#8b5cf6" />
         <StatCard titulo="Vales abiertos" valor={data?.valesAbiertos.length ?? 0} subtitulo="pendientes de cierre" icon={ClipboardCheck} color="var(--danger)" />
+
+        {/* Card Luminarias */}
+        <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: 'var(--primary)18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Lightbulb size={22} color="var(--primary)" strokeWidth={1.8} />
+            </div>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Luminarias</div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid var(--border)' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Fabricadas (con receta)</span>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--success)' }}>{data?.totalLuminariasFabricadas ?? 0}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Comerciales (importadas)</span>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--info)' }}>{data?.totalLuminariasComerciales ?? 0}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Depósito (nacionales)</span>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: '#8b5cf6' }}>{data?.totalLuminariasDeposito ?? 0}</span>
+          </div>
+        </div>
       </div>
 
       {/* Fila 1 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-
-        {/* Componentes bajo mínimo */}
         <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <AlertTriangle size={16} color="var(--warning)" /> Componentes a reponer
@@ -112,7 +135,6 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Últimas producciones */}
         <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Factory size={16} color="var(--secondary)" /> Últimas producciones
@@ -147,8 +169,6 @@ export default function DashboardPage() {
 
       {/* Fila 2 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-
-        {/* Sensores bajo mínimo */}
         <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Zap size={16} color="var(--info)" /> Sensores/Fuentes a reponer
@@ -180,7 +200,6 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Herramientas no disponibles */}
         <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '20px 24px' }}>
           <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Wrench size={16} color="#8b5cf6" /> Herramientas no disponibles

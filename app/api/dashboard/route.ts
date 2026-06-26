@@ -6,6 +6,8 @@ import Movimiento from '@/models/Movimiento'
 import SensorFuente from '@/models/SensorFuente'
 import Herramienta from '@/models/Herramienta'
 import Vale from '@/models/Vale'
+import ProductoTerminado from '@/models/ProductoTerminado'
+import LuminariaComercial from '@/models/LuminariaComercial'
 
 export async function GET() {
   try {
@@ -27,6 +29,9 @@ export async function GET() {
       totalHerramientas,
       herramientasNoDisponibles,
       valesAbiertos,
+      totalLuminariasFabricadas,
+      totalLuminariasComerciales,
+      totalLuminariasDeposito,
     ] = await Promise.all([
       Componente.countDocuments({ activo: true }),
       Componente.find({ activo: true, $expr: { $lt: ['$stock_actual', '$stock_minimo'] } }).sort({ id_componente: 1 }),
@@ -49,6 +54,9 @@ export async function GET() {
       Herramienta.countDocuments({ activo: true }),
       Herramienta.find({ activo: true, estado: { $in: ['en_uso', 'reparacion'] } }).sort({ nombre: 1 }),
       Vale.find({ estado: { $in: ['abierto', 'devolucion_parcial'] } }).sort({ createdAt: -1 }).limit(5),
+      ProductoTerminado.countDocuments({ activo: true }),
+      LuminariaComercial.countDocuments({ activo: true, origen: 'importada' }),
+      LuminariaComercial.countDocuments({ activo: true, origen: 'nacional' }),
     ])
 
     return NextResponse.json({
@@ -66,6 +74,9 @@ export async function GET() {
         totalHerramientas,
         herramientasNoDisponibles,
         valesAbiertos,
+        totalLuminariasFabricadas,
+        totalLuminariasComerciales,
+        totalLuminariasDeposito,
       },
     })
   } catch {
