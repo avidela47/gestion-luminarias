@@ -30,7 +30,23 @@ export default function FichaReceta({ receta, onClose }: Props) {
       })
   }, [])
 
-  const imprimir = () => window.print()
+const imprimir = () => {
+  const contenido = document.getElementById('ficha-print')?.innerHTML
+  if (!contenido) return
+  const ventana = window.open('', '_blank')
+  if (!ventana) return
+  ventana.document.write(`
+    <html><head><title>Ficha ${receta.codigo}</title>
+    <style>
+      body { font-family: system-ui, sans-serif; color: #111827; padding: 24px; }
+      img { max-width: 100%; object-fit: cover; }
+      * { box-sizing: border-box; }
+    </style>
+    </head><body>${contenido}</body></html>
+  `)
+  ventana.document.close()
+  ventana.print()
+}
 
   const filaComponentes = receta.componentes.map((c) => {
     const detalle = componentes.find((d) => d.id_componente === c.id_componente)
