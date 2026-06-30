@@ -44,13 +44,13 @@ export default function UploadFoto({ value, onChange, code }: Props) {
   return (
     <div className="flex flex-col gap-2">
       {value ? (
-        <div className="relative w-32 h-32 rounded-lg overflow-hidden border border-white/10 group">
+        <div className="relative w-44 h-44 rounded-lg overflow-hidden border border-white/10 group">
           <Image
             src={value}
             alt="Foto"
             fill
             className="object-cover"
-            sizes="128px"
+            sizes="176px"
           />
           <button
             type="button"
@@ -65,7 +65,7 @@ export default function UploadFoto({ value, onChange, code }: Props) {
           onClick={() => inputRef.current?.click()}
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
-          className="w-32 h-32 rounded-lg border-2 border-dashed border-white/20 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-white/40 transition-colors"
+          className="w-44 h-44 rounded-lg border-2 border-dashed border-white/20 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-white/40 transition-colors"
         >
           {loading ? (
             <Loader2 size={20} className="animate-spin text-white/40" />
