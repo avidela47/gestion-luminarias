@@ -35,24 +35,41 @@ export default function FichaReceta({ receta, onClose }: Props) {
     return { ...c, detalle }
   })
 
-  const imprimir = () => {
-  const tarjetas = filaComponentes.map((c) => `
-    <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#fff;break-inside:avoid;">
-      <div style="width:100%;height:130px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden;">
-        ${c.detalle?.foto
-          ? `<img src="${c.detalle.foto}" style="width:100%;height:130px;object-fit:cover;" crossorigin="anonymous" />`
-          : `<span style="font-size:28px;">📦</span>`
-        }
-      </div>
-      <div style="padding:8px 10px;">
-        <div style="font-size:10px;font-weight:700;color:#0f766e;margin-bottom:2px;">${c.id_componente}</div>
-        <div style="font-size:11px;color:#374151;margin-bottom:4px;line-height:1.3;">${c.detalle?.nombre ?? '—'}</div>
-        <div style="display:inline-block;font-size:12px;font-weight:800;color:#111827;background:#f0fdf4;padding:2px 6px;border-radius:4px;border:1px solid #bbf7d0;">
-          x${c.cantidad} ${c.detalle?.unidad ?? ''}
+  const imprimir = async () => {
+  const toBase64 = async (url: string): Promise<string> => {
+    try {
+      const res = await fetch(url)
+      const blob = await res.blob()
+      return new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.readAsDataURL(blob)
+      })
+    } catch {
+      return ''
+    }
+  }
+
+  const tarjetas = await Promise.all(filaComponentes.map(async (c) => {
+    const imgSrc = c.detalle?.foto ? await toBase64(c.detalle.foto) : ''
+    return `
+      <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#fff;break-inside:avoid;">
+        <div style="width:100%;height:100px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+          ${imgSrc
+            ? `<img src="${imgSrc}" style="width:100%;height:100px;object-fit:cover;" />`
+            : `<span style="font-size:28px;">📦</span>`
+          }
+        </div>
+        <div style="padding:8px 10px;">
+          <div style="font-size:10px;font-weight:700;color:#0f766e;margin-bottom:2px;">${c.id_componente}</div>
+          <div style="font-size:11px;color:#374151;margin-bottom:4px;line-height:1.3;">${c.detalle?.nombre ?? '—'}</div>
+          <div style="display:inline-block;font-size:12px;font-weight:800;color:#111827;background:#f0fdf4;padding:2px 6px;border-radius:4px;border:1px solid #bbf7d0;">
+            x${c.cantidad} ${c.detalle?.unidad ?? ''}
+          </div>
         </div>
       </div>
-    </div>
-  `).join('')
+    `
+  }))
 
   const ventana = window.open('', '_blank')
   if (!ventana) return
@@ -82,28 +99,11 @@ export default function FichaReceta({ receta, onClose }: Props) {
           <div style="font-weight:700;color:#111827;">v${receta.version} — ${new Date(receta.fecha_version).toLocaleDateString('es-AR')}</div>
         </div>
       </div>
-      <div class="grid">${tarjetas}</div>
+      <div class="grid">${tarjetas.join('')}</div>
       <div style="margin-top:16px;padding-top:8px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;text-align:center;">
         ITELSA SAS — ${new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}
       </div>
-      <script>
-        window.onload = function() {
-          const imgs = document.querySelectorAll('img')
-          let loaded = 0
-          if (imgs.length === 0) { window.print(); return; }
-          imgs.forEach(img => {
-            if (img.complete) {
-              loaded++
-              if (loaded === imgs.length) window.print()
-            } else {
-              img.onload = img.onerror = function() {
-                loaded++
-                if (loaded === imgs.length) window.print()
-              }
-            }
-          })
-        }
-      </script>
+      <script>window.onload = function(){ window.print() }</script>
     </body>
     </html>
   `)

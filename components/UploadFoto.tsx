@@ -38,7 +38,7 @@ export default function UploadFoto({ value, onChange, code }: Props) {
     if (file) handleFile(file)
   }
 
-  const size = 300
+  const size = 120
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
