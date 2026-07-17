@@ -57,7 +57,7 @@ export default function FichaReceta({ receta, onClose }: Props) {
       <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#fff;break-inside:avoid;">
         <div style="width:100%;height:80px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden;">
           ${imgSrc
-            ? `<img src="${imgSrc}" style="width:100%;height:80px;object-fit:cover;" />`
+            ? `<img src="${imgSrc}" style="width:70%;height:70px;object-fit:contain;margin:auto;" />`
             : `<span style="font-size:28px;">📦</span>`
           }
         </div>
