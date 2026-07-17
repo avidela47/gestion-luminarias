@@ -55,9 +55,9 @@ export default function FichaReceta({ receta, onClose }: Props) {
     const imgSrc = c.detalle?.foto ? await toBase64(c.detalle.foto) : ''
     return `
       <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#fff;break-inside:avoid;">
-        <div style="width:100%;height:100px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        <div style="width:100%;height:80px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden;">
           ${imgSrc
-            ? `<img src="${imgSrc}" style="width:100%;height:100px;object-fit:cover;" />`
+            ? `<img src="${imgSrc}" style="width:100%;height:80px;object-fit:cover;" />`
             : `<span style="font-size:28px;">📦</span>`
           }
         </div>
