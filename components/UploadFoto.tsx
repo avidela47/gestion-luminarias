@@ -1,13 +1,12 @@
 'use client'
-
 import { useRef, useState } from 'react'
 import Image from 'next/image'
 import { Upload, X, Loader2 } from 'lucide-react'
 
 interface Props {
-  value: string        // URL actual guardada en MongoDB
+  value: string
   onChange: (url: string) => void
-  code?: string        // prefijo del archivo (ej: id_componente)
+  code?: string
 }
 
 export default function UploadFoto({ value, onChange, code }: Props) {
@@ -22,10 +21,8 @@ export default function UploadFoto({ value, onChange, code }: Props) {
       const form = new FormData()
       form.append('file', file)
       if (code) form.append('code', code)
-
       const res = await fetch('/api/upload', { method: 'POST', body: form })
       const data = await res.json()
-
       if (!res.ok || !data.ok) throw new Error(data.error || 'Error subiendo imagen')
       onChange(data.url)
     } catch (e) {
@@ -41,23 +38,25 @@ export default function UploadFoto({ value, onChange, code }: Props) {
     if (file) handleFile(file)
   }
 
+  const size = 300
+
   return (
-    <div className="flex flex-col gap-2">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       {value ? (
-        <div className="relative w-44 h-44 rounded-lg overflow-hidden border border-white/10 group">
-          <Image
-            src={value}
-            alt="Foto"
-            fill
-            className="object-cover"
-            sizes="176px"
-          />
+        <div style={{ position: 'relative', width: size, height: size, borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}
+          className="group">
+          <Image src={value} alt="Foto" fill style={{ objectFit: 'cover' }} sizes="300px" />
           <button
             type="button"
             onClick={() => onChange('')}
-            className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{
+              position: 'absolute', top: '6px', right: '6px',
+              backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: '50%',
+              border: 'none', cursor: 'pointer', padding: '4px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
           >
-            <X size={14} className="text-white" />
+            <X size={14} color="#fff" />
           </button>
         </div>
       ) : (
@@ -65,32 +64,35 @@ export default function UploadFoto({ value, onChange, code }: Props) {
           onClick={() => inputRef.current?.click()}
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
-          className="w-44 h-44 rounded-lg border-2 border-dashed border-white/20 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-white/40 transition-colors"
+          style={{
+            width: size, height: size, borderRadius: '8px',
+            border: '2px dashed var(--border)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            gap: '8px', cursor: 'pointer', backgroundColor: 'var(--input-bg)',
+          }}
         >
           {loading ? (
-            <Loader2 size={20} className="animate-spin text-white/40" />
+            <Loader2 size={24} color="var(--text-muted)" />
           ) : (
             <>
-              <Upload size={20} className="text-white/40" />
-              <span className="text-xs text-white/40">Subir foto</span>
+              <Upload size={24} color="var(--text-muted)" />
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Subir foto</span>
             </>
           )}
         </div>
       )}
-
       <input
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp"
-        className="hidden"
+        style={{ display: 'none' }}
         onChange={(e) => {
           const file = e.target.files?.[0]
           if (file) handleFile(file)
           e.target.value = ''
         }}
       />
-
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p style={{ fontSize: '12px', color: 'var(--danger)' }}>{error}</p>}
     </div>
   )
 }
