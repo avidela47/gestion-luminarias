@@ -36,63 +36,79 @@ export default function FichaReceta({ receta, onClose }: Props) {
   })
 
   const imprimir = () => {
-    const tarjetas = filaComponentes.map((c) => `
-      <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#fff;break-inside:avoid;">
-        <div style="width:100%;height:130px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden;">
-          ${c.detalle?.foto
-            ? `<img src="${c.detalle.foto}" style="width:100%;height:130px;object-fit:cover;" />`
-            : `<span style="font-size:28px;">📦</span>`
-          }
-        </div>
-        <div style="padding:8px 10px;">
-          <div style="font-size:10px;font-weight:700;color:#0f766e;margin-bottom:2px;">${c.id_componente}</div>
-          <div style="font-size:11px;color:#374151;margin-bottom:4px;line-height:1.3;">${c.detalle?.nombre ?? '—'}</div>
-          <div style="display:inline-block;font-size:12px;font-weight:800;color:#111827;background:#f0fdf4;padding:2px 6px;border-radius:4px;border:1px solid #bbf7d0;">
-            x${c.cantidad} ${c.detalle?.unidad ?? ''}
-          </div>
+  const tarjetas = filaComponentes.map((c) => `
+    <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#fff;break-inside:avoid;">
+      <div style="width:100%;height:130px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+        ${c.detalle?.foto
+          ? `<img src="${c.detalle.foto}" style="width:100%;height:130px;object-fit:cover;" crossorigin="anonymous" />`
+          : `<span style="font-size:28px;">📦</span>`
+        }
+      </div>
+      <div style="padding:8px 10px;">
+        <div style="font-size:10px;font-weight:700;color:#0f766e;margin-bottom:2px;">${c.id_componente}</div>
+        <div style="font-size:11px;color:#374151;margin-bottom:4px;line-height:1.3;">${c.detalle?.nombre ?? '—'}</div>
+        <div style="display:inline-block;font-size:12px;font-weight:800;color:#111827;background:#f0fdf4;padding:2px 6px;border-radius:4px;border:1px solid #bbf7d0;">
+          x${c.cantidad} ${c.detalle?.unidad ?? ''}
         </div>
       </div>
-    `).join('')
+    </div>
+  `).join('')
 
-    const ventana = window.open('', '_blank')
-    if (!ventana) return
-    ventana.document.write(`
-      <html>
-      <head>
-        <title>Ficha ${receta.codigo}</title>
-        <style>
-          @page { size: A4 landscape; margin: 12mm; }
-          body { font-family: Arial, sans-serif; color: #111827; margin: 0; padding: 0; }
-          .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #0f766e; }
-          .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div>
-            <div style="font-size:18px;font-weight:800;color:#0f766e;">ITELSA SAS</div>
-            <div style="font-size:11px;color:#6b7280;">Smart Lighting</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:16px;font-weight:800;color:#111827;">${receta.codigo}</div>
-            <div style="font-size:13px;color:#374151;">${receta.nombre}</div>
-          </div>
-          <div style="text-align:right;font-size:11px;color:#6b7280;">
-            <div>Ficha técnica de armado</div>
-            <div style="font-weight:700;color:#111827;">v${receta.version} — ${new Date(receta.fecha_version).toLocaleDateString('es-AR')}</div>
-            <div style="margin-top:4px;font-size:10px;">${receta.componentes.length} componente${receta.componentes.length !== 1 ? 's' : ''}</div>
-          </div>
+  const ventana = window.open('', '_blank')
+  if (!ventana) return
+  ventana.document.write(`
+    <html>
+    <head>
+      <title>Ficha ${receta.codigo}</title>
+      <style>
+        @page { size: A4 landscape; margin: 12mm; }
+        body { font-family: Arial, sans-serif; color: #111827; margin: 0; padding: 0; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #0f766e; }
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <div style="font-size:18px;font-weight:800;color:#0f766e;">ITELSA SAS</div>
+          <div style="font-size:11px;color:#6b7280;">Smart Lighting</div>
         </div>
-        <div class="grid">${tarjetas}</div>
-        <div style="margin-top:16px;padding-top:8px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;text-align:center;">
-          ITELSA SAS — ${new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}
+        <div style="text-align:center;">
+          <div style="font-size:16px;font-weight:800;color:#111827;">${receta.codigo}</div>
+          <div style="font-size:13px;color:#374151;">${receta.nombre}</div>
         </div>
-      </body>
-      </html>
-    `)
-    ventana.document.close()
-    ventana.print()
-  }
+        <div style="text-align:right;font-size:11px;color:#6b7280;">
+          <div>Ficha técnica de armado</div>
+          <div style="font-weight:700;color:#111827;">v${receta.version} — ${new Date(receta.fecha_version).toLocaleDateString('es-AR')}</div>
+        </div>
+      </div>
+      <div class="grid">${tarjetas}</div>
+      <div style="margin-top:16px;padding-top:8px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;text-align:center;">
+        ITELSA SAS — ${new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}
+      </div>
+      <script>
+        window.onload = function() {
+          const imgs = document.querySelectorAll('img')
+          let loaded = 0
+          if (imgs.length === 0) { window.print(); return; }
+          imgs.forEach(img => {
+            if (img.complete) {
+              loaded++
+              if (loaded === imgs.length) window.print()
+            } else {
+              img.onload = img.onerror = function() {
+                loaded++
+                if (loaded === imgs.length) window.print()
+              }
+            }
+          })
+        }
+      </script>
+    </body>
+    </html>
+  `)
+  ventana.document.close()
+}
 
   return (
     <>
