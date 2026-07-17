@@ -37,18 +37,19 @@ export default function FichaReceta({ receta, onClose }: Props) {
 
   const imprimir = async () => {
   const toBase64 = async (url: string): Promise<string> => {
-    try {
-      const res = await fetch(url)
-      const blob = await res.blob()
-      return new Promise((resolve) => {
-        const reader = new FileReader()
-        reader.onloadend = () => resolve(reader.result as string)
-        reader.readAsDataURL(blob)
-      })
-    } catch {
-      return ''
-    }
+  try {
+    const proxyUrl = `/api/proxy-imagen?url=${encodeURIComponent(url)}`
+    const res = await fetch(proxyUrl)
+    const blob = await res.blob()
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return ''
   }
+}
 
   const tarjetas = await Promise.all(filaComponentes.map(async (c) => {
     const imgSrc = c.detalle?.foto ? await toBase64(c.detalle.foto) : ''
