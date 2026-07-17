@@ -161,7 +161,7 @@ export default function FichaReceta({ receta, onClose }: Props) {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
                 {filaComponentes.map((c, i) => (
                   <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                    <div style={{ width: '100%', height: '140px', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '120px', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
                       {c.detalle?.foto ? (
                         <Image src={c.detalle.foto} alt={c.detalle.nombre} fill style={{ objectFit: 'cover' }} sizes="200px" />
                       ) : (
