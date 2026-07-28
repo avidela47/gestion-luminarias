@@ -70,12 +70,6 @@ export default function Sidebar({ nombreUsuario }: { nombreUsuario: string }) {
         <Image src="/logo.png" alt="ITELSA SAS" width={128} height={128}
           style={{ objectFit: 'contain', borderRadius: '8px' }} />
         <div>
-          <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '15px', letterSpacing: '0.5px' }}>
-            ITELSA SAS
-          </div>
-          <div style={{ color: 'var(--sidebar-accent)', fontSize: '10px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
-            Smart Lighting
-          </div>
           {nombreUsuario && (
             <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>
               {nombreUsuario}
