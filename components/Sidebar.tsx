@@ -68,7 +68,7 @@ export default function Sidebar({ nombreUsuario }: { nombreUsuario: string }) {
         display: 'flex', alignItems: 'center', gap: '12px',
       }}>
         <Image src="/logo.png" alt="ITELSA SAS" width={128} height={128}
-          style={{ objectFit: 'contain', borderRadius: '8px', backgroundColor: '#ffffff', padding: '6px' }} />
+          style={{ objectFit: 'contain', borderRadius: '8px' }} />
         <div>
           {nombreUsuario && (
             <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>

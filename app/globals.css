@@ -4,12 +4,11 @@
   --background: #f4f6f8;
   --foreground: #1a2332;
 
-  --sidebar-bg: #0f1923;
-  --sidebar-text: #cbd5e1;
-  --sidebar-text-active: #ffffff;
-  --sidebar-accent: #2d7d78;
-  --sidebar-hover: #1a2e3d;
-  --sidebar-border: #1e3448;
+  --sidebar-bg: #f8fafc;
+  --sidebar-text: #475569;
+--sidebar-text-active: #0f1923;
+--sidebar-hover: #e2e8f0;
+--sidebar-border: #e2e8f0;
 
   --primary: #2d7d78;
   --primary-hover: #236460;
