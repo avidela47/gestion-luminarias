@@ -11,7 +11,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     await connectDB()
     const { id } = await params
-    const nombre = session.user.name ?? 'Usuario'
+    const { operario } = await req.json()
+
+    if (!operario) return NextResponse.json({ ok: false, error: 'Elegí quién marca como listo' }, { status: 400 })
 
     const proyecto = await Proyecto.findById(id)
     if (!proyecto) return NextResponse.json({ ok: false, error: 'Proyecto no encontrado' }, { status: 404 })
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     await registrarAuditoria({
       req, accion: 'editar', modulo: 'Proyectos',
-      detalle: `${nombre} marcó como LISTO el proyecto ${proyecto.numero}`,
+      detalle: `${operario} marcó como LISTO el proyecto ${proyecto.numero}`,
       dato_id: id,
     })
 

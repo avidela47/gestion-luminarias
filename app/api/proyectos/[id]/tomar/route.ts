@@ -11,7 +11,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     await connectDB()
     const { id } = await params
-    const nombre = session.user.name ?? 'Usuario'
+    const { operario } = await req.json()
+
+    if (!operario) return NextResponse.json({ ok: false, error: 'Elegí quién toma el proyecto' }, { status: 400 })
 
     const proyecto = await Proyecto.findById(id)
     if (!proyecto) return NextResponse.json({ ok: false, error: 'Proyecto no encontrado' }, { status: 404 })
@@ -21,13 +23,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const actualizado = await Proyecto.findByIdAndUpdate(
       id,
-      { $set: { estado: 'PREPARACION', tomado_por: nombre, fecha_tomado: new Date() } },
+      { $set: { estado: 'PREPARACION', tomado_por: operario, fecha_tomado: new Date() } },
       { new: true }
     )
 
     await registrarAuditoria({
       req, accion: 'editar', modulo: 'Proyectos',
-      detalle: `${nombre} tomó el proyecto ${proyecto.numero}`,
+      detalle: `${operario} tomó el proyecto ${proyecto.numero}`,
       dato_id: id,
     })
 

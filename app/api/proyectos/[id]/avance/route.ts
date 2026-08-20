@@ -17,9 +17,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     await connectDB()
     const { id } = await params
-    const nombre = session.user.name ?? 'Usuario'
-    const { item_id, cantidad } = await req.json()
+    const { operario, item_id, cantidad } = await req.json()
 
+    if (!operario) return NextResponse.json({ ok: false, error: 'Elegí quién fabricó' }, { status: 400 })
     if (!item_id || !Number.isInteger(cantidad) || cantidad <= 0) {
       return NextResponse.json({ ok: false, error: 'Cantidad inválida' }, { status: 400 })
     }
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         stock_resultante: componente!.stock_actual,
         referencia: idProd,
         notas: `Proyecto ${proyecto.numero} — ${codigoUpper} x${cantidad}`,
-        usuario: nombre,
+        usuario: operario,
       })
     }
 
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       codigo_luminaria: codigoUpper,
       version_receta: receta.version,
       cantidad,
-      operario: nombre,
+      operario,
       notas: `Proyecto ${proyecto.numero}`,
       componentes_descontados: componentesDescontados,
     })
@@ -128,12 +128,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       modelo: item.modelo,
       optica: item.optica,
       cantidad,
-      realizado_por: nombre,
+      realizado_por: operario,
     })
 
     await registrarAuditoria({
       req, accion: 'crear', modulo: 'Proyectos',
-      detalle: `${nombre} fabricó ${cantidad} de ${item.modelo} (${item.optica}) en ${proyecto.numero} — componentes descontados`,
+      detalle: `${operario} fabricó ${cantidad} de ${item.modelo} (${item.optica}) en ${proyecto.numero} — componentes descontados`,
       dato_id: id,
     })
 

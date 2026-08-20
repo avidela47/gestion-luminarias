@@ -33,7 +33,8 @@ export default function FabricaProyectosPage() {
   const [loading, setLoading] = useState(true)
   const [modalAccion, setModalAccion] = useState<{ proyecto: Proyecto; tipo: AccionTipo } | null>(null)
   const [itemSel, setItemSel] = useState('')
-  const [cantidadSel, setCantidadSel] = useState('')
+const [cantidadSel, setCantidadSel] = useState('')
+const [operarioSel, setOperarioSel] = useState('')
   const [errorModal, setErrorModal] = useState('')
   const [procesando, setProcesando] = useState(false)
 
@@ -51,23 +52,25 @@ export default function FabricaProyectosPage() {
   }, [cargar])
 
   const abrirModal = (proyecto: Proyecto, tipo: AccionTipo) => {
-    setModalAccion({ proyecto, tipo })
-    setItemSel(proyecto.items.length === 1 ? proyecto.items[0].id : '')
-    setCantidadSel('')
-    setErrorModal('')
-  }
+  setModalAccion({ proyecto, tipo })
+  setItemSel(proyecto.items.length === 1 ? proyecto.items[0].id : '')
+  setCantidadSel('')
+  setOperarioSel('')
+  setErrorModal('')
+}
 
   const cerrarModal = () => setModalAccion(null)
 
   const confirmarAccion = async () => {
-    if (!modalAccion) return
-    setErrorModal('')
+  if (!modalAccion) return
+  setErrorModal('')
+  if (!operarioSel) return setErrorModal('Elegí quién realiza la acción')
 
-    const { proyecto, tipo } = modalAccion
-    const url = `/api/proyectos/${proyecto._id}/${tipo}`
-    const body: Record<string, unknown> = {}
+  const { proyecto, tipo } = modalAccion
+  const url = `/api/proyectos/${proyecto._id}/${tipo}`
+  const body: Record<string, unknown> = { operario: operarioSel }
 
-    if (tipo === 'avance') {
+  if (tipo === 'avance') {
       if (!itemSel) return setErrorModal('Elegí el modelo')
       const cant = Number(cantidadSel)
       if (!cant || cant <= 0) return setErrorModal('Ingresá una cantidad válida')
@@ -222,7 +225,21 @@ export default function FabricaProyectosPage() {
 
             <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '16px' }}>{modalAccion.proyecto.numero} — {modalAccion.proyecto.cliente}</div>
 
-            {modalAccion.tipo === 'avance' && (
+<label style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', display: 'block', marginBottom: '4px' }}>OPERARIO</label>
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
+  {['Fabio', 'Cristian', 'Pajarito'].map((op) => (
+    <button key={op} onClick={() => setOperarioSel(op)} style={{
+      padding: '10px 6px', borderRadius: '8px', fontSize: '12px', fontWeight: 700,
+      border: operarioSel === op ? '2px solid #2d7d78' : '1px solid #1e3448',
+      backgroundColor: operarioSel === op ? '#2d7d7822' : '#0f1923',
+      color: operarioSel === op ? '#5eead4' : '#94a3b8', cursor: 'pointer',
+    }}>
+      {op}
+    </button>
+  ))}
+</div>
+
+{modalAccion.tipo === 'avance' && (
               <>
                 <label style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', display: 'block', marginBottom: '4px' }}>MODELO</label>
                 <select value={itemSel} onChange={(e) => setItemSel(e.target.value)} style={{
