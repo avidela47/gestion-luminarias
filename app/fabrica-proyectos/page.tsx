@@ -14,12 +14,6 @@ interface Proyecto {
   notas: string
 }
 
-const PERFILES = [
-  { id: 'FABIO', nombre: 'Fabio' },
-  { id: 'CRISTIAN', nombre: 'Cristian' },
-  { id: 'PAJARITO', nombre: 'Pajarito' },
-]
-
 const estadoConfig: Record<string, { color: string; bg: string; label: string }> = {
   NUEVO: { color: '#f59e0b', bg: '#f59e0b22', label: 'NUEVO' },
   PREPARACION: { color: '#3b82f6', bg: '#3b82f622', label: 'PREPARACIÓN' },
@@ -30,11 +24,9 @@ const estadoConfig: Record<string, { color: string; bg: string; label: string }>
 type AccionTipo = 'tomar' | 'avance' | 'listo'
 
 export default function FabricaProyectosPage() {
-  const [proyectos, setProyectos] = useState<Proyecto[]>([]);
+  const [proyectos, setProyectos] = useState<Proyecto[]>([])
   const [loading, setLoading] = useState(true)
   const [modalAccion, setModalAccion] = useState<{ proyecto: Proyecto; tipo: AccionTipo } | null>(null)
-  const [perfilSel, setPerfilSel] = useState('')
-  const [passwordSel, setPasswordSel] = useState('')
   const [itemSel, setItemSel] = useState('')
   const [cantidadSel, setCantidadSel] = useState('')
   const [errorModal, setErrorModal] = useState('')
@@ -55,8 +47,6 @@ export default function FabricaProyectosPage() {
 
   const abrirModal = (proyecto: Proyecto, tipo: AccionTipo) => {
     setModalAccion({ proyecto, tipo })
-    setPerfilSel('')
-    setPasswordSel('')
     setItemSel(proyecto.items.length === 1 ? proyecto.items[0].id : '')
     setCantidadSel('')
     setErrorModal('')
@@ -67,12 +57,10 @@ export default function FabricaProyectosPage() {
   const confirmarAccion = async () => {
     if (!modalAccion) return
     setErrorModal('')
-    if (!perfilSel) return setErrorModal('Elegí tu nombre')
-    if (!passwordSel) return setErrorModal('Ingresá tu contraseña')
 
     const { proyecto, tipo } = modalAccion
     const url = `/api/proyectos/${proyecto._id}/${tipo}`
-    const body: Record<string, unknown> = { perfil: perfilSel, password: passwordSel }
+    const body: Record<string, unknown> = {}
 
     if (tipo === 'avance') {
       if (!itemSel) return setErrorModal('Elegí el modelo')
@@ -227,30 +215,10 @@ export default function FabricaProyectosPage() {
                 <label style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', display: 'block', marginBottom: '4px' }}>CANTIDAD FABRICADA</label>
                 <input type="number" min={1} value={cantidadSel} onChange={(e) => setCantidadSel(e.target.value)} style={{
                   width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #1e3448',
-                  backgroundColor: '#0f1923', color: '#fff', fontSize: '13px', marginBottom: '12px', outline: 'none',
+                  backgroundColor: '#0f1923', color: '#fff', fontSize: '13px', marginBottom: '16px', outline: 'none',
                 }} />
               </>
             )}
-
-            <label style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', display: 'block', marginBottom: '4px' }}>QUIÉN SOS</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
-              {PERFILES.map((p) => (
-                <button key={p.id} onClick={() => setPerfilSel(p.id)} style={{
-                  padding: '10px 6px', borderRadius: '8px', fontSize: '12px', fontWeight: 700,
-                  border: perfilSel === p.id ? '2px solid #2d7d78' : '1px solid #1e3448',
-                  backgroundColor: perfilSel === p.id ? '#2d7d7822' : '#0f1923',
-                  color: perfilSel === p.id ? '#5eead4' : '#94a3b8', cursor: 'pointer',
-                }}>
-                  {p.nombre}
-                </button>
-              ))}
-            </div>
-
-            <label style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', display: 'block', marginBottom: '4px' }}>CONTRASEÑA</label>
-            <input type="password" value={passwordSel} onChange={(e) => setPasswordSel(e.target.value)} style={{
-              width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #1e3448',
-              backgroundColor: '#0f1923', color: '#fff', fontSize: '13px', marginBottom: '16px', outline: 'none',
-            }} />
 
             {errorModal && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#ef444422', color: '#f87171', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', marginBottom: '12px' }}>

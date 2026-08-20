@@ -1,31 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db/mongoose'
 import Proyecto from '@/models/Proyecto'
-import bcrypt from 'bcryptjs'
+import { auth } from '@/auth'
 import { registrarAuditoria } from '@/lib/auditoria'
-
-const PERFILES: Record<string, string | undefined> = {
-  FABIO: process.env.FACTORY_FABIO_PASSWORD_HASH,
-  CRISTIAN: process.env.FACTORY_CRISTIAN_PASSWORD_HASH,
-  PAJARITO: process.env.FACTORY_PAJARITO_PASSWORD_HASH,
-}
-const NOMBRES: Record<string, string> = { FABIO: 'Fabio', CRISTIAN: 'Cristian', PAJARITO: 'Pajarito' }
-
-async function validarFabrica(perfil: string, password: string): Promise<string | null> {
-  const hash = PERFILES[perfil]
-  if (!hash) return null
-  const valido = await bcrypt.compare(password, hash)
-  return valido ? NOMBRES[perfil] : null
-}
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await auth()
+    if (!session?.user) return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 })
+
     await connectDB()
     const { id } = await params
-    const { perfil, password } = await req.json()
-
-    const nombre = await validarFabrica(perfil, password)
-    if (!nombre) return NextResponse.json({ ok: false, error: 'Identificación inválida' }, { status: 401 })
+    const nombre = session.user.name ?? 'Usuario'
 
     const proyecto = await Proyecto.findById(id)
     if (!proyecto) return NextResponse.json({ ok: false, error: 'Proyecto no encontrado' }, { status: 404 })
