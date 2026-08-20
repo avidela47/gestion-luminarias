@@ -26,6 +26,8 @@ interface ResultadoEjecucion {
   errores?: string[]
   a_fabricar?: { codigo_luminaria: string; descripcion: string; cantidad: number }[]
   en_stock?: { codigo: string; descripcion: string; cantidad: number; tipo: string }[]
+  proyecto_id?: string
+  proyecto_numero?: string
 }
 
 interface ComponenteReceta {
@@ -74,12 +76,14 @@ export default function VerOrdenPage() {
     const res = await fetch(`/api/ordenes/${id}/ejecutar`, { method: 'POST' })
     const data = await res.json()
     setEjecutando(false)
-    setResultado({
+        setResultado({
       ok: data.ok,
       mensaje: data.ok ? data.mensaje : data.error,
       errores: data.errores,
       a_fabricar: data.a_fabricar,
       en_stock: data.en_stock,
+      proyecto_id: data.proyecto_id,
+      proyecto_numero: data.proyecto_numero,
     })
     if (data.ok) {
       fetch(`/api/ordenes/${id}`)
@@ -318,9 +322,9 @@ export default function VerOrdenPage() {
                     <AlertTriangle size={16} />
                     Falta fabricar antes de ejecutar:
                   </div>
-                  <button onClick={() => router.push('/fabricar')}
+                                    <button onClick={() => resultado.proyecto_id ? router.push(`/proyectos/${resultado.proyecto_id}`) : router.push('/proyectos')}
                     style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, backgroundColor: '#4a6fa5', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                    Ir a Fabricar →
+                    Ver proyecto {resultado.proyecto_numero ?? ''} →
                   </button>
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
