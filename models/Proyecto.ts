@@ -24,6 +24,8 @@ export interface IProyecto extends Document {
   alerta_cambios: string[]
   alerta_confirmada_por: string[]
   fecha_listo: Date | null
+  id_orden_trabajo: string
+  numero_orden_trabajo: string
   createdAt: Date
   updatedAt: Date
 }
@@ -56,6 +58,8 @@ const ProyectoSchema = new Schema<IProyecto>(
     alerta_cambios: { type: [String], default: [] },
     alerta_confirmada_por: { type: [String], default: [] },
     fecha_listo: { type: Date, default: null },
+    id_orden_trabajo: { type: String, default: '' },
+    numero_orden_trabajo: { type: String, default: '' },
   },
   { timestamps: true }
 )

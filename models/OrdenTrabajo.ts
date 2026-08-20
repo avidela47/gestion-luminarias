@@ -27,6 +27,7 @@ export interface IOrdenTrabajo extends Document {
   ejecutada: boolean
   fecha_ejecucion: Date | null
   items_descontados: IItemDescontado[]
+  id_proyecto_fabrica: string
   createdAt: Date
   updatedAt: Date
 }
@@ -69,6 +70,7 @@ const OrdenTrabajoSchema = new Schema<IOrdenTrabajo>(
     ejecutada: { type: Boolean, default: false },
     fecha_ejecucion: { type: Date, default: null },
     items_descontados: { type: [ItemDescontadoSchema], default: [] },
+    id_proyecto_fabrica: { type: String, default: '' },
   },
   { timestamps: true }
 )
