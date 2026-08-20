@@ -11,6 +11,7 @@ const OPTICAS = ['14째', '24째', '38째', '60째', '65째', '100째', '120째', '140�
 export default function CrearProyectoPage() {
   const router = useRouter()
   const [cliente, setCliente] = useState('')
+const [clientes, setClientes] = useState<{ id_cliente: string; nombre: string; razon_social: string }[]>([])
   const [nombre, setNombre] = useState('')
   const [fechaObjetivo, setFechaObjetivo] = useState('')
   const [prioridad, setPrioridad] = useState<'NORMAL' | 'URGENTE'>('NORMAL')
@@ -20,11 +21,14 @@ export default function CrearProyectoPage() {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    fetch('/api/recetas')
-      .then((r) => r.json())
-      .then((data) => { if (data.ok) setRecetas(data.data.filter((r: RecetaOpcion) => r.activa)) })
-  }, [])
+ useEffect(() => {
+  fetch('/api/recetas')
+    .then((r) => r.json())
+    .then((data) => { if (data.ok) setRecetas(data.data.filter((r: RecetaOpcion) => r.activa)) })
+  fetch('/api/clientes')
+    .then((r) => r.json())
+    .then((data) => { if (data.ok) setClientes(data.data) })
+}, [])
 
   const agregarItem = () => setItems((prev) => [...prev, { modelo: '', cantidad_solicitada: 1, optica: '' }])
   const quitarItem = (i: number) => setItems((prev) => prev.filter((_, idx) => idx !== i))
@@ -66,7 +70,12 @@ export default function CrearProyectoPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
           <div>
             <label style={labelStyle}>CLIENTE *</label>
-            <input type="text" value={cliente} onChange={(e) => setCliente(e.target.value)} placeholder="Nombre del cliente" style={inputStyle} />
+            <select value={cliente} onChange={(e) => setCliente(e.target.value)} style={inputStyle}>
+  <option value="">Seleccionar cliente...</option>
+  {clientes.map((c) => (
+    <option key={c.id_cliente} value={c.razon_social || c.nombre}>{c.nombre}</option>
+  ))}
+</select>
           </div>
           <div>
             <label style={labelStyle}>NOMBRE DEL PROYECTO</label>
