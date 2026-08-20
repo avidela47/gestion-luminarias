@@ -1,170 +1,103 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db/mongoose'
 import Proyecto from '@/models/Proyecto'
-import ProyectoAvance from '@/models/ProyectoAvance'
-import Receta from '@/models/Receta'
-import Componente from '@/models/Componente'
-import Movimiento from '@/models/Movimiento'
-import ProductoTerminado from '@/models/ProductoTerminado'
-import Produccion from '@/models/Produccion'
-import bcrypt from 'bcryptjs'
+import { auth } from '@/auth'
 import { registrarAuditoria } from '@/lib/auditoria'
 
-const PERFILES: Record<string, string | undefined> = {
-  FABIO: process.env.FACTORY_FABIO_PASSWORD_HASH,
-  CRISTIAN: process.env.FACTORY_CRISTIAN_PASSWORD_HASH,
-  PAJARITO: process.env.FACTORY_PAJARITO_PASSWORD_HASH,
-}
-const NOMBRES: Record<string, string> = { FABIO: 'Fabio', CRISTIAN: 'Cristian', PAJARITO: 'Pajarito' }
-
-async function validarFabrica(perfil: string, password: string): Promise<string | null> {
-  const hash = PERFILES[perfil]
-  if (!hash) return null
-  const valido = await bcrypt.compare(password, hash)
-  return valido ? NOMBRES[perfil] : null
-}
-
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB()
     const { id } = await params
-    const { perfil, password, item_id, cantidad } = await req.json()
-
-    const nombre = await validarFabrica(perfil, password)
-    if (!nombre) return NextResponse.json({ ok: false, error: 'Identificación inválida' }, { status: 401 })
-
-    if (!item_id || !Number.isInteger(cantidad) || cantidad <= 0) {
-      return NextResponse.json({ ok: false, error: 'Cantidad inválida' }, { status: 400 })
-    }
-
     const proyecto = await Proyecto.findById(id)
     if (!proyecto) return NextResponse.json({ ok: false, error: 'Proyecto no encontrado' }, { status: 404 })
-    if (proyecto.estado === 'NUEVO') {
-      return NextResponse.json({ ok: false, error: 'El proyecto todavía no fue tomado' }, { status: 409 })
-    }
-    if (proyecto.estado === 'LISTO') {
-      return NextResponse.json({ ok: false, error: 'El proyecto ya está finalizado' }, { status: 409 })
-    }
+    return NextResponse.json({ ok: true, data: proyecto })
+  } catch (e) {
+    console.error('[proyecto GET]', e)
+    return NextResponse.json({ ok: false, error: 'Error al obtener proyecto' }, { status: 500 })
+  }
+}
 
-    const item = proyecto.items.find((i: { id: string }) => i.id === item_id)
-    if (!item) return NextResponse.json({ ok: false, error: 'Modelo no encontrado en este proyecto' }, { status: 404 })
-
-    const pendiente = item.cantidad_solicitada - item.cantidad_completada
-    if (cantidad > pendiente) {
-      return NextResponse.json({ ok: false, error: `Solo quedan ${pendiente} unidades pendientes de este modelo` }, { status: 409 })
-    }
-
-    const codigoUpper = item.modelo.toUpperCase()
-    const receta = await Receta.findOne({ codigo: codigoUpper, activa: true })
-    if (!receta) {
-      return NextResponse.json({ ok: false, error: `No se encontró receta activa para ${codigoUpper}` }, { status: 404 })
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 })
     }
 
-    // 1. Validar stock de componentes
-    const faltantes: string[] = []
-    for (const c of receta.componentes) {
-      const componente = await Componente.findOne({ id_componente: c.id_componente, activo: true })
-      if (!componente) { faltantes.push(`${c.id_componente} (no existe)`); continue }
-      const necesario = c.cantidad * cantidad
-      if (componente.stock_actual < necesario) {
-        faltantes.push(`${c.id_componente} — necesitás ${necesario}, tenés ${componente.stock_actual}`)
-      }
-    }
-    if (faltantes.length > 0) {
-      return NextResponse.json({ ok: false, error: 'Stock de componentes insuficiente', faltantes }, { status: 400 })
+    await connectDB()
+    const { id } = await params
+    const proyectoActual = await Proyecto.findById(id)
+    if (!proyectoActual) return NextResponse.json({ ok: false, error: 'Proyecto no encontrado' }, { status: 404 })
+
+    if (proyectoActual.estado === 'LISTO') {
+      return NextResponse.json({ ok: false, error: 'No se puede editar un proyecto ya finalizado' }, { status: 400 })
     }
 
-    // 2. Subir ProductoTerminado
-    const nombreProducto = (receta.nombre ?? '').trim() !== '' ? receta.nombre : codigoUpper
-    const existe = await ProductoTerminado.findOne({ codigo_luminaria: codigoUpper })
-    if (existe) {
-      await ProductoTerminado.findOneAndUpdate(
-        { codigo_luminaria: codigoUpper },
-        { $inc: { stock_actual: cantidad }, $set: { activo: true } }
-      )
-    } else {
-      await ProductoTerminado.create({
-        codigo_luminaria: codigoUpper,
-        nombre: nombreProducto,
-        stock_actual: cantidad,
-        stock_minimo: 0,
-        precio_venta: 0,
-        notas: '',
-        foto: '',
-        activo: true,
-      })
+    const body = await req.json()
+
+    const cambios: string[] = []
+    if (body.prioridad && body.prioridad !== proyectoActual.prioridad) {
+      cambios.push(`Prioridad cambiada a ${body.prioridad}`)
+    }
+    if (body.fecha_objetivo !== undefined && String(body.fecha_objetivo) !== String(proyectoActual.fecha_objetivo)) {
+      cambios.push('Fecha objetivo modificada')
+    }
+    if (body.items) {
+      const itemsAntes = JSON.stringify(proyectoActual.items.map((i: { modelo: string; cantidad_solicitada: number; optica: string }) => ({ m: i.modelo, c: i.cantidad_solicitada, o: i.optica })))
+      const itemsDespues = JSON.stringify(body.items.map((i: { modelo: string; cantidad_solicitada: number; optica: string }) => ({ m: i.modelo, c: i.cantidad_solicitada, o: i.optica })))
+      if (itemsAntes !== itemsDespues) cambios.push('Modelos, cantidades u ópticas modificados')
+    }
+    if (body.notas !== undefined && body.notas !== proyectoActual.notas) {
+      cambios.push('Notas actualizadas')
     }
 
-    // 3. Descontar componentes + movimientos
-    const componentesDescontados = []
-    const fecha = new Date()
-    const idProd = `PROD-${fecha.getFullYear()}-${Date.now()}`
+    const update: Record<string, unknown> = { ...body }
 
-    for (const c of receta.componentes) {
-      const cantidadDescontar = c.cantidad * cantidad
-      const componente = await Componente.findOneAndUpdate(
-        { id_componente: c.id_componente },
-        { $inc: { stock_actual: -cantidadDescontar } },
-        { new: true }
-      )
-      componentesDescontados.push({ id_componente: c.id_componente, cantidad: cantidadDescontar })
-      await Movimiento.create({
-        id_movimiento: `MOV-${fecha.getFullYear()}-${Date.now()}-${c.id_componente}`,
-        tipo: 'salida_produccion',
-        id_componente: c.id_componente,
-        cantidad: -cantidadDescontar,
-        stock_resultante: componente!.stock_actual,
-        referencia: idProd,
-        notas: `Proyecto ${proyecto.numero} — ${codigoUpper} x${cantidad}`,
-        usuario: nombre,
-      })
+    if (cambios.length > 0) {
+      update.alerta_activa = true
+      update.alerta_revision = proyectoActual.alerta_revision + 1
+      update.alerta_cambios = cambios
+      update.alerta_confirmada_por = []
     }
 
-    // 4. Registrar producción (misma colección que Fabricar)
-    await Produccion.create({
-      id_produccion: idProd,
-      codigo_luminaria: codigoUpper,
-      version_receta: receta.version,
-      cantidad,
-      operario: nombre,
-      notas: `Proyecto ${proyecto.numero}`,
-      componentes_descontados: componentesDescontados,
-    })
-
-    // 5. Actualizar avance del proyecto
-    item.cantidad_completada += cantidad
-    const nuevoEstado = proyecto.estado === 'PREPARACION' ? 'FABRICACION' : proyecto.estado
-    proyecto.estado = nuevoEstado
-    await proyecto.save()
-
-    const totalSolicitado = proyecto.items.reduce((a: number, i: { cantidad_solicitada: number }) => a + i.cantidad_solicitada, 0)
-    const totalCompletado = proyecto.items.reduce((a: number, i: { cantidad_completada: number }) => a + i.cantidad_completada, 0)
-
-    await ProyectoAvance.create({
-      id_proyecto: id,
-      numero_proyecto: proyecto.numero,
-      item_id,
-      modelo: item.modelo,
-      optica: item.optica,
-      cantidad,
-      realizado_por: nombre,
-    })
+    const proyecto = await Proyecto.findByIdAndUpdate(id, { $set: update }, { new: true, runValidators: true })
 
     await registrarAuditoria({
-      req, accion: 'crear', modulo: 'Proyectos',
-      detalle: `${nombre} fabricó ${cantidad} de ${item.modelo} (${item.optica}) en ${proyecto.numero} — componentes descontados`,
+      req, accion: 'editar', modulo: 'Proyectos',
+      detalle: `Editó proyecto ${proyecto!.numero}${cambios.length > 0 ? ` — ${cambios.join(', ')}` : ''}`,
       dato_id: id,
     })
 
-    return NextResponse.json({
-      ok: true,
-      data: {
-        proyecto: { id, estado: proyecto.estado, completado: totalCompletado, solicitado: totalSolicitado },
-        item: { id: item.id, modelo: item.modelo, optica: item.optica, solicitado: item.cantidad_solicitada, completado: item.cantidad_completada },
-      },
-    })
+    return NextResponse.json({ ok: true, data: proyecto })
   } catch (e) {
-    console.error('[proyecto avance]', e)
-    return NextResponse.json({ ok: false, error: 'Error al cargar avance' }, { status: 500 })
+    console.error('[proyecto PUT]', e)
+    return NextResponse.json({ ok: false, error: 'Error al editar proyecto' }, { status: 500 })
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 })
+    }
+
+    await connectDB()
+    const { id } = await params
+    const proyecto = await Proyecto.findById(id)
+    if (!proyecto) return NextResponse.json({ ok: false, error: 'Proyecto no encontrado' }, { status: 404 })
+
+    await Proyecto.findByIdAndDelete(id)
+
+    await registrarAuditoria({
+      req, accion: 'eliminar', modulo: 'Proyectos',
+      detalle: `Eliminó proyecto ${proyecto.numero}`,
+      dato_id: id,
+    })
+
+    return NextResponse.json({ ok: true })
+  } catch (e) {
+    console.error('[proyecto DELETE]', e)
+    return NextResponse.json({ ok: false, error: 'Error al eliminar proyecto' }, { status: 500 })
   }
 }
