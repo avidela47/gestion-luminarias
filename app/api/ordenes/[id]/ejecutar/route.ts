@@ -4,6 +4,8 @@ import OrdenTrabajo from '@/models/OrdenTrabajo'
 import ProductoTerminado from '@/models/ProductoTerminado'
 import LuminariaComercial from '@/models/LuminariaComercial'
 import SensorFuente from '@/models/SensorFuente'
+import Proyecto from '@/models/Proyecto'
+import Counter from '@/models/Counter'
 import { registrarAuditoria } from '@/lib/auditoria'
 
 type Tipo = 'fabricada' | 'comercial' | 'sensor'
@@ -30,15 +32,13 @@ async function descontar(codigo: string, tipo: Tipo, cantidad: number) {
   }
 }
 
-async function devolver(codigo: string, tipo: Tipo, cantidad: number) {
-  const cod = codigo.toUpperCase()
-  if (tipo === 'fabricada') {
-    await ProductoTerminado.findOneAndUpdate({ codigo_luminaria: cod }, { $inc: { stock_actual: cantidad } })
-  } else if (tipo === 'comercial') {
-    await LuminariaComercial.findOneAndUpdate({ codigo: cod }, { $inc: { stock_actual: cantidad } })
-  } else {
-    await SensorFuente.findOneAndUpdate({ codigo: cod }, { $inc: { stock_actual: cantidad } })
-  }
+async function generarNumeroProyecto(): Promise<string> {
+  const counter = await Counter.findOneAndUpdate(
+    { _id: 'proyectos' },
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
+  )
+  return `AV-${1000 + counter.seq}`
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -70,22 +70,72 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
-    // Bloquear si falta fabricar
+    // Si falta fabricar: crear/reutilizar Proyecto de Fábrica y bloquear ejecución hasta que esté listo
     if (aFabricar.length > 0) {
+      let numeroProyecto = ''
+
+      if (orden.id_proyecto_fabrica) {
+        // Ya tiene proyecto asociado — verificar si sigue pendiente
+        const proyectoExistente = await Proyecto.findById(orden.id_proyecto_fabrica)
+        if (proyectoExistente && proyectoExistente.estado !== 'LISTO') {
+          return NextResponse.json({
+            ok: false,
+            error: `Ya hay un proyecto de fábrica en curso: ${proyectoExistente.numero}. Esperá a que esté LISTO.`,
+            a_fabricar: aFabricar,
+            en_stock: enStock,
+            proyecto_numero: proyectoExistente.numero,
+            proyecto_id: proyectoExistente._id.toString(),
+          }, { status: 400 })
+        }
+      }
+
+      // Crear proyecto nuevo
+      numeroProyecto = await generarNumeroProyecto()
+      const items = aFabricar.map((item, idx) => ({
+        id: `${numeroProyecto}-${idx + 1}`,
+        modelo: item.codigo_luminaria,
+        cantidad_solicitada: item.cantidad,
+        optica: 'N/A',
+        cantidad_completada: 0,
+      }))
+
+      const proyecto = await Proyecto.create({
+        numero: numeroProyecto,
+        cliente: orden.razon_social,
+        nombre: `Auto-generado desde OT ${orden.numero}`,
+        prioridad: 'NORMAL',
+        notas: `Generado automáticamente al ejecutar la Orden de Trabajo ${orden.numero}`,
+        items,
+        alerta_activa: true,
+        alerta_revision: 1,
+        alerta_cambios: ['Proyecto generado desde OT'],
+        id_orden_trabajo: id,
+        numero_orden_trabajo: orden.numero,
+      })
+
+      await OrdenTrabajo.findByIdAndUpdate(id, { $set: { id_proyecto_fabrica: proyecto._id.toString() } })
+
+      await registrarAuditoria({
+        req, accion: 'crear', modulo: 'Proyectos',
+        detalle: `Generó proyecto ${proyecto.numero} automáticamente desde OT ${orden.numero}`,
+        dato_id: proyecto._id.toString(),
+      })
+
       return NextResponse.json({
         ok: false,
-        error: 'Falta fabricar o reponer stock antes de ejecutar.',
+        error: `Falta fabricar. Se generó el proyecto ${proyecto.numero} para el taller.`,
         a_fabricar: aFabricar,
         en_stock: enStock,
+        proyecto_numero: proyecto.numero,
+        proyecto_id: proyecto._id.toString(),
       }, { status: 400 })
     }
 
-    // Descontar todo
+    // Todo en stock — descontar y ejecutar
     for (const item of planDescuento) {
       await descontar(item.codigo, item.tipo, item.cantidad)
     }
 
-    // Guardar qué se descontó para poder devolver si se elimina la OT
     await OrdenTrabajo.findByIdAndUpdate(id, {
       $set: {
         ejecutada: true,
