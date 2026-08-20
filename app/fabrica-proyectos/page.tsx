@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { Play, PackagePlus, CheckCircle, AlertTriangle, X } from 'lucide-react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { Play, PackagePlus, CheckCircle, AlertTriangle, X, Plus } from 'lucide-react'
 
 interface Item { id: string; modelo: string; cantidad_solicitada: number; optica: string; cantidad_completada: number }
 interface Proyecto {
@@ -24,6 +26,9 @@ const estadoConfig: Record<string, { color: string; bg: string; label: string }>
 type AccionTipo = 'tomar' | 'avance' | 'listo'
 
 export default function FabricaProyectosPage() {
+  const { data: session } = useSession()
+  const router = useRouter()
+  const esAdmin = session?.user?.rol === 'admin'
   const [proyectos, setProyectos] = useState<Proyecto[]>([])
   const [loading, setLoading] = useState(true)
   const [modalAccion, setModalAccion] = useState<{ proyecto: Proyecto; tipo: AccionTipo } | null>(null)
@@ -94,9 +99,20 @@ export default function FabricaProyectosPage() {
 
   return (
     <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#fff', letterSpacing: '1px' }}>ITELSA — FÁBRICA</h1>
-        <p style={{ fontSize: '14px', color: '#5eead4', marginTop: '6px' }}>Proyectos en producción</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+        <div style={{ flex: 1, textAlign: 'center', marginLeft: esAdmin ? '140px' : '0' }}>
+          <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#fff', letterSpacing: '1px' }}>ITELSA — FÁBRICA</h1>
+          <p style={{ fontSize: '14px', color: '#5eead4', marginTop: '6px' }}>Proyectos en producción</p>
+        </div>
+        {esAdmin && (
+          <button onClick={() => router.push('/proyectos')} style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '8px 16px', borderRadius: '8px', border: '1px solid #1e3448',
+            backgroundColor: '#141f2b', color: '#5eead4', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+          }}>
+            <Plus size={14} /> Gestionar proyectos
+          </button>
+        )}
       </div>
 
       {proyectos.length === 0 ? (
