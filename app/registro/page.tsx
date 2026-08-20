@@ -35,7 +35,7 @@ export default function RegistroPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: 'var(--sidebar-bg)',
+      backgroundColor: '#0f1923',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '16px',
     }}>
@@ -61,7 +61,7 @@ export default function RegistroPage() {
 
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <Image src="/logo.png" alt="ITELSA" width={52} height={52}
-            style={{ objectFit: 'contain', borderRadius: '10px', display: 'block', margin: '0 auto 12px' }} />
+            style={{ objectFit: 'contain', borderRadius: '10px', display: 'block', margin: '0 auto 12px', backgroundColor: '#fff', padding: '6px' }} />
           <div style={{ fontSize: '20px', fontWeight: 800, color: '#ffffff' }}>Registrar usuario</div>
           <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>Solo administradores</div>
         </div>

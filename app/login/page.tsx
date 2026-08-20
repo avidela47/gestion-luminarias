@@ -65,7 +65,7 @@ export default function LoginPage() {
             alt="ITELSA"
             width={52}
             height={52}
-            style={{ objectFit: 'contain', borderRadius: '10px', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }}
+            style={{ objectFit: 'contain', borderRadius: '10px', marginBottom: '12px', display: 'block', margin: '0 auto 12px', backgroundColor: '#fff', padding: '6px' }}
           />
           <div style={{ fontSize: '24px', fontWeight: 800, color: '#ffffff', letterSpacing: '1px' }}>
             ITELSA SAS
