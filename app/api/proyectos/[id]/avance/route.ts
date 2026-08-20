@@ -126,14 +126,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       numero_proyecto: proyecto.numero,
       item_id,
       modelo: item.modelo,
-      optica: item.optica,
       cantidad,
       realizado_por: operario,
     })
 
     await registrarAuditoria({
       req, accion: 'crear', modulo: 'Proyectos',
-      detalle: `${operario} fabricó ${cantidad} de ${item.modelo} (${item.optica}) en ${proyecto.numero} — componentes descontados`,
+      detalle: `${operario} fabricó ${cantidad} de ${item.modelo} en ${proyecto.numero} — componentes descontados`,
       dato_id: id,
     })
 
@@ -141,7 +140,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       ok: true,
       data: {
         proyecto: { id, estado: proyecto.estado, completado: totalCompletado, solicitado: totalSolicitado },
-        item: { id: item.id, modelo: item.modelo, optica: item.optica, solicitado: item.cantidad_solicitada, completado: item.cantidad_completada },
+        item: { id: item.id, modelo: item.modelo, solicitado: item.cantidad_solicitada, completado: item.cantidad_completada },
       },
     })
   } catch (e) {

@@ -31,32 +31,27 @@ export async function POST(req: NextRequest) {
     if (!session?.user) {
       return NextResponse.json({ ok: false, error: 'No autorizado' }, { status: 401 })
     }
-
     await connectDB()
     const body = await req.json()
-
     if (!body.cliente) {
       return NextResponse.json({ ok: false, error: 'Falta el cliente' }, { status: 400 })
     }
     if (!Array.isArray(body.items) || body.items.length === 0) {
       return NextResponse.json({ ok: false, error: 'Agregá al menos un modelo' }, { status: 400 })
     }
-    const invalido = body.items.some((i: { modelo: string; cantidad_solicitada: number; optica: string }) =>
-      !i.modelo || !i.optica || i.cantidad_solicitada < 1
+    const invalido = body.items.some((i: { modelo: string; cantidad_solicitada: number }) =>
+      !i.modelo || i.cantidad_solicitada < 1
     )
     if (invalido) {
-      return NextResponse.json({ ok: false, error: 'Cada modelo necesita nombre, óptica y cantidad válida' }, { status: 400 })
+      return NextResponse.json({ ok: false, error: 'Cada modelo necesita código y cantidad válida' }, { status: 400 })
     }
-
     const numero = await generarNumero()
-    const items = body.items.map((i: { modelo: string; cantidad_solicitada: number; optica: string }, idx: number) => ({
+    const items = body.items.map((i: { modelo: string; cantidad_solicitada: number }, idx: number) => ({
       id: `${numero}-${idx + 1}`,
       modelo: i.modelo,
       cantidad_solicitada: i.cantidad_solicitada,
-      optica: i.optica,
       cantidad_completada: 0,
     }))
-
     const proyecto = await Proyecto.create({
       numero,
       cliente: body.cliente,
@@ -69,13 +64,11 @@ export async function POST(req: NextRequest) {
       alerta_revision: 1,
       alerta_cambios: ['Proyecto nuevo'],
     })
-
     await registrarAuditoria({
       req, accion: 'crear', modulo: 'Proyectos',
       detalle: `Creó proyecto ${proyecto.numero} — ${proyecto.cliente}`,
       dato_id: proyecto._id.toString(),
     })
-
     return NextResponse.json({ ok: true, data: proyecto }, { status: 201 })
   } catch (e) {
     console.error('[proyectos POST]', e)

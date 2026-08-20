@@ -4,7 +4,6 @@ export interface IProyectoItem {
   id: string
   modelo: string
   cantidad_solicitada: number
-  optica: string
   cantidad_completada: number
 }
 
@@ -35,7 +34,6 @@ const ProyectoItemSchema = new Schema<IProyectoItem>(
     id: { type: String, required: true },
     modelo: { type: String, required: true },
     cantidad_solicitada: { type: Number, required: true, min: 1 },
-    optica: { type: String, required: true },
     cantidad_completada: { type: Number, default: 0, min: 0 },
   },
   { _id: false }

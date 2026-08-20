@@ -43,8 +43,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       cambios.push('Fecha objetivo modificada')
     }
     if (body.items) {
-      const itemsAntes = JSON.stringify(proyectoActual.items.map((i: { modelo: string; cantidad_solicitada: number; optica: string }) => ({ m: i.modelo, c: i.cantidad_solicitada, o: i.optica })))
-      const itemsDespues = JSON.stringify(body.items.map((i: { modelo: string; cantidad_solicitada: number; optica: string }) => ({ m: i.modelo, c: i.cantidad_solicitada, o: i.optica })))
+      const itemsAntes = JSON.stringify(proyectoActual.items.map((i: { modelo: string; cantidad_solicitada: number }) => ({ m: i.modelo, c: i.cantidad_solicitada })))
+      const itemsDespues = JSON.stringify(body.items.map((i: { modelo: string; cantidad_solicitada: number }) => ({ m: i.modelo, c: i.cantidad_solicitada })))
       if (itemsAntes !== itemsDespues) cambios.push('Modelos, cantidades u ópticas modificados')
     }
     if (body.notas !== undefined && body.notas !== proyectoActual.notas) {

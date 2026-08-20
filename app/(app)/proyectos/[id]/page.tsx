@@ -75,7 +75,6 @@ export default function VerProyectoPage() {
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
               <th style={{ textAlign: 'left', padding: '6px 0', color: 'var(--text-secondary)', fontWeight: 500 }}>Modelo</th>
-              <th style={{ textAlign: 'center', padding: '6px 0', color: 'var(--text-secondary)', fontWeight: 500 }}>Óptica</th>
               <th style={{ textAlign: 'right', padding: '6px 0', color: 'var(--text-secondary)', fontWeight: 500 }}>Completado</th>
               <th style={{ textAlign: 'right', padding: '6px 0', color: 'var(--text-secondary)', fontWeight: 500 }}>Solicitado</th>
             </tr>
@@ -84,7 +83,6 @@ export default function VerProyectoPage() {
             {proyecto.items.map((it) => (
               <tr key={it.id} style={{ borderBottom: '1px solid var(--border)' }}>
                 <td style={{ padding: '8px 0', fontWeight: 500, color: 'var(--text-primary)' }}>{it.modelo}</td>
-                <td style={{ padding: '8px 0', textAlign: 'center', color: 'var(--text-secondary)' }}>{it.optica}</td>
                 <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: it.cantidad_completada >= it.cantidad_solicitada ? 'var(--success)' : 'var(--text-primary)' }}>
                   {it.cantidad_completada}
                 </td>

@@ -11,7 +11,7 @@ export interface Proyecto {
   fecha_objetivo: string | null
   prioridad: 'NORMAL' | 'URGENTE'
   estado: 'NUEVO' | 'PREPARACION' | 'FABRICACION' | 'LISTO'
-  items: { id: string; modelo: string; cantidad_solicitada: number; optica: string; cantidad_completada: number }[]
+  items: { id: string; modelo: string; cantidad_solicitada: number; cantidad_completada: number }[]
   tomado_por: string | null
   createdAt: string
 }

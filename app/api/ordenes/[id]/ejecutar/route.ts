@@ -70,12 +70,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
     }
 
-    // Si falta fabricar: crear/reutilizar Proyecto de Fábrica y bloquear ejecución hasta que esté listo
     if (aFabricar.length > 0) {
-      let numeroProyecto = ''
-
       if (orden.id_proyecto_fabrica) {
-        // Ya tiene proyecto asociado — verificar si sigue pendiente
         const proyectoExistente = await Proyecto.findById(orden.id_proyecto_fabrica)
         if (proyectoExistente && proyectoExistente.estado !== 'LISTO') {
           return NextResponse.json({
@@ -89,13 +85,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }
       }
 
-      // Crear proyecto nuevo
-      numeroProyecto = await generarNumeroProyecto()
+      const numeroProyecto = await generarNumeroProyecto()
       const items = aFabricar.map((item, idx) => ({
         id: `${numeroProyecto}-${idx + 1}`,
         modelo: item.codigo_luminaria,
         cantidad_solicitada: item.cantidad,
-        optica: 'N/A',
         cantidad_completada: 0,
       }))
 
@@ -131,7 +125,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }, { status: 400 })
     }
 
-    // Todo en stock — descontar y ejecutar
     for (const item of planDescuento) {
       await descontar(item.codigo, item.tipo, item.cantidad)
     }

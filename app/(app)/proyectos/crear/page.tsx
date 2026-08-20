@@ -3,34 +3,32 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, ArrowLeft } from 'lucide-react'
 
-interface Item { modelo: string; cantidad_solicitada: number; optica: string }
+interface Item { modelo: string; cantidad_solicitada: number }
 interface RecetaOpcion { codigo: string; nombre: string; activa: boolean }
-
-const OPTICAS = ['14°', '24°', '38°', '60°', '65°', '100°', '120°', '140°', '160°']
 
 export default function CrearProyectoPage() {
   const router = useRouter()
   const [cliente, setCliente] = useState('')
-const [clientes, setClientes] = useState<{ id_cliente: string; nombre: string; razon_social: string }[]>([])
+  const [clientes, setClientes] = useState<{ id_cliente: string; nombre: string; razon_social: string }[]>([])
   const [nombre, setNombre] = useState('')
   const [fechaObjetivo, setFechaObjetivo] = useState('')
   const [prioridad, setPrioridad] = useState<'NORMAL' | 'URGENTE'>('NORMAL')
   const [notas, setNotas] = useState('')
-  const [items, setItems] = useState<Item[]>([{ modelo: '', cantidad_solicitada: 1, optica: '' }])
+  const [items, setItems] = useState<Item[]>([{ modelo: '', cantidad_solicitada: 1 }])
   const [recetas, setRecetas] = useState<RecetaOpcion[]>([])
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
 
- useEffect(() => {
-  fetch('/api/recetas')
-    .then((r) => r.json())
-    .then((data) => { if (data.ok) setRecetas(data.data.filter((r: RecetaOpcion) => r.activa)) })
-  fetch('/api/clientes')
-    .then((r) => r.json())
-    .then((data) => { if (data.ok) setClientes(data.data) })
-}, [])
+  useEffect(() => {
+    fetch('/api/recetas')
+      .then((r) => r.json())
+      .then((data) => { if (data.ok) setRecetas(data.data.filter((r: RecetaOpcion) => r.activa)) })
+    fetch('/api/clientes')
+      .then((r) => r.json())
+      .then((data) => { if (data.ok) setClientes(data.data) })
+  }, [])
 
-  const agregarItem = () => setItems((prev) => [...prev, { modelo: '', cantidad_solicitada: 1, optica: '' }])
+  const agregarItem = () => setItems((prev) => [...prev, { modelo: '', cantidad_solicitada: 1 }])
   const quitarItem = (i: number) => setItems((prev) => prev.filter((_, idx) => idx !== i))
   const actualizarItem = (i: number, campo: keyof Item, valor: string | number) => {
     setItems((prev) => prev.map((it, idx) => (idx === i ? { ...it, [campo]: valor } : it)))
@@ -39,8 +37,8 @@ const [clientes, setClientes] = useState<{ id_cliente: string; nombre: string; r
   const guardar = async () => {
     setError('')
     if (!cliente) return setError('Ingresá el cliente')
-    if (items.some((i) => !i.modelo || !i.optica || i.cantidad_solicitada < 1)) {
-      return setError('Completá modelo, óptica y cantidad en todos los ítems')
+    if (items.some((i) => !i.modelo || i.cantidad_solicitada < 1)) {
+      return setError('Completá modelo y cantidad en todos los ítems')
     }
     setGuardando(true)
     const res = await fetch('/api/proyectos', {
@@ -71,11 +69,11 @@ const [clientes, setClientes] = useState<{ id_cliente: string; nombre: string; r
           <div>
             <label style={labelStyle}>CLIENTE *</label>
             <select value={cliente} onChange={(e) => setCliente(e.target.value)} style={inputStyle}>
-  <option value="">Seleccionar cliente...</option>
-  {clientes.map((c) => (
-    <option key={c.id_cliente} value={c.razon_social || c.nombre}>{c.nombre}</option>
-  ))}
-</select>
+              <option value="">Seleccionar cliente...</option>
+              {clientes.map((c) => (
+                <option key={c.id_cliente} value={c.razon_social || c.nombre}>{c.nombre}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label style={labelStyle}>NOMBRE DEL PROYECTO</label>
@@ -108,22 +106,18 @@ const [clientes, setClientes] = useState<{ id_cliente: string; nombre: string; r
             <Plus size={15} /> Agregar modelo
           </button>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 90px 36px', gap: '8px', marginBottom: '8px' }}>
-          {['Modelo (receta)', 'Óptica', 'Cantidad', ''].map((h) => (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 36px', gap: '8px', marginBottom: '8px' }}>
+          {['Modelo (receta)', 'Cantidad', ''].map((h) => (
             <div key={h} style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>{h}</div>
           ))}
         </div>
         {items.map((it, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 90px 36px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 100px 36px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
             <select value={it.modelo} onChange={(e) => actualizarItem(i, 'modelo', e.target.value)} style={{ ...inputStyle, fontSize: '12px' }}>
               <option value="">Seleccionar receta...</option>
               {recetas.map((r) => (
                 <option key={r.codigo} value={r.codigo}>{r.codigo} — {r.nombre}</option>
               ))}
-            </select>
-            <select value={it.optica} onChange={(e) => actualizarItem(i, 'optica', e.target.value)} style={{ ...inputStyle, fontSize: '12px' }}>
-              <option value="">Óptica</option>
-              {OPTICAS.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
             <input type="number" min={1} value={it.cantidad_solicitada} onChange={(e) => actualizarItem(i, 'cantidad_solicitada', Number(e.target.value))} style={{ ...inputStyle, fontSize: '12px' }} />
             {items.length > 1 && (

@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Play, PackagePlus, CheckCircle, AlertTriangle, X, Plus, ArrowLeft } from 'lucide-react'
 
-interface Item { id: string; modelo: string; cantidad_solicitada: number; optica: string; cantidad_completada: number }
+interface Item { id: string; modelo: string; cantidad_solicitada: number; cantidad_completada: number }
 interface Proyecto {
   _id: string
   numero: string
@@ -166,7 +166,7 @@ const [operarioSel, setOperarioSel] = useState('')
                 <div style={{ marginBottom: '14px' }}>
                   {p.items.map((it) => (
                     <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#cbd5e1', padding: '4px 0', borderBottom: '1px solid #1e3448' }}>
-                      <span>{it.modelo} <span style={{ color: '#64748b' }}>({it.optica})</span></span>
+                      <span>{it.modelo}</span>
                       <span style={{ fontWeight: 700, color: it.cantidad_completada >= it.cantidad_solicitada ? '#16a34a' : '#fff' }}>
                         {it.cantidad_completada}/{it.cantidad_solicitada}
                       </span>
@@ -249,7 +249,7 @@ const [operarioSel, setOperarioSel] = useState('')
                   <option value="">Seleccionar...</option>
                   {modalAccion.proyecto.items.map((it) => (
                     <option key={it.id} value={it.id}>
-                      {it.modelo} ({it.optica}) — pendiente {it.cantidad_solicitada - it.cantidad_completada}
+                      {it.modelo} — pendiente {it.cantidad_solicitada - it.cantidad_completada}
                     </option>
                   ))}
                 </select>
