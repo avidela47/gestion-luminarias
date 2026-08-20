@@ -51,13 +51,14 @@ export default function NuevoPresupuestoPage() {
   const [busquedaCatalogo, setBusquedaCatalogo] = useState('')
   const [mostrarCatalogo, setMostrarCatalogo] = useState(false)
 
-  useEffect(() => {
+   useEffect(() => {
     Promise.all([
       fetch('/api/clientes').then((r) => r.json()),
       fetch('/api/sensores').then((r) => r.json()),
       fetch('/api/luminarias-comerciales').then((r) => r.json()),
       fetch('/api/productos').then((r) => r.json()),
-    ]).then(([clientesData, sensoresData, comercialesData, fabricadasData]) => {
+      fetch('/api/recetas').then((r) => r.json()),
+    ]).then(([clientesData, sensoresData, comercialesData, fabricadasData, recetasData]) => {
       if (clientesData.ok) setClientes(clientesData.data)
       const items: ProductoCatalogo[] = []
       if (sensoresData.ok) {
@@ -70,10 +71,19 @@ export default function NuevoPresupuestoPage() {
           items.push({ codigo: l.codigo, descripcion: l.descripcion, precio: l.precio, tipo: 'luminaria_comercial' })
         })
       }
+      const codigosYaFabricados = new Set<string>()
       if (fabricadasData.ok) {
         fabricadasData.data.forEach((l: { codigo_luminaria: string; nombre?: string; descripcion?: string; precio_venta?: number; precio?: number }) => {
+          codigosYaFabricados.add(l.codigo_luminaria.toUpperCase())
           items.push({ codigo: l.codigo_luminaria, descripcion: l.nombre ?? l.descripcion ?? '', precio: l.precio_venta ?? l.precio ?? 0, tipo: 'luminaria_fabricada' })
         })
+      }
+      if (recetasData.ok) {
+        recetasData.data
+          .filter((r: { codigo: string; activa: boolean }) => r.activa && !codigosYaFabricados.has(r.codigo.toUpperCase()))
+          .forEach((r: { codigo: string; nombre: string }) => {
+            items.push({ codigo: r.codigo, descripcion: `${r.nombre} (a fabricar)`, precio: 0, tipo: 'receta_a_fabricar' })
+          })
       }
       setCatalogo(items.sort((a, b) => a.codigo.localeCompare(b.codigo)))
     })
