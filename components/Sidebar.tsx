@@ -20,7 +20,7 @@ const menuItems = [
       { label: 'Fabricar', href: '/fabricar', icon: Factory },
       { label: 'Movimientos', href: '/movimientos', icon: ArrowLeftRight },
             { label: 'Vales', href: '/vales', icon: ClipboardCheck },
-      { label: 'Proyectos Fábrica', href: '/proyectos', icon: Radio },
+      { label: 'Proyectos Fábrica', href: '/fabrica-proyectos', icon: Radio },
     ],
   },
   {
