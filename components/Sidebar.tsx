@@ -133,7 +133,10 @@ export default function Sidebar({ nombreUsuario }: { nombreUsuario: string }) {
         <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
           v1.0.0 — {new Date().getFullYear()}
         </div>
-        <button onClick={() => signOut({ callbackUrl: '/login' })}
+        <button onClick={async () => {
+  await signOut({ redirect: false })
+  window.location.href = '/login'
+}}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
             fontSize: '11px', color: 'var(--text-muted)',
