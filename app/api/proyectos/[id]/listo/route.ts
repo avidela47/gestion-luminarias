@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/lib/db/mongoose'
 import Proyecto from '@/models/Proyecto'
-import ProductoTerminado from '@/models/ProductoTerminado'
 import bcrypt from 'bcryptjs'
 import { registrarAuditoria } from '@/lib/auditoria'
 
@@ -30,34 +29,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const proyecto = await Proyecto.findById(id)
     if (!proyecto) return NextResponse.json({ ok: false, error: 'Proyecto no encontrado' }, { status: 404 })
+    if (proyecto.estado === 'LISTO') {
+      return NextResponse.json({ ok: false, error: 'El proyecto ya estaba marcado como listo' }, { status: 409 })
+    }
 
     const totalSolicitado = proyecto.items.reduce((a: number, i: { cantidad_solicitada: number }) => a + i.cantidad_solicitada, 0)
     const totalCompletado = proyecto.items.reduce((a: number, i: { cantidad_completada: number }) => a + i.cantidad_completada, 0)
 
     if (totalCompletado < totalSolicitado) {
       return NextResponse.json({ ok: false, error: 'Todavía falta completar producción' }, { status: 409 })
-    }
-    if (proyecto.estado === 'LISTO') {
-      return NextResponse.json({ ok: false, error: 'El proyecto ya estaba marcado como listo' }, { status: 409 })
-    }
-
-    // Acreditar stock: cada modelo del proyecto sube en ProductoTerminado
-    for (const item of proyecto.items) {
-      const cod = item.modelo.toUpperCase()
-      const existente = await ProductoTerminado.findOne({ codigo_luminaria: cod })
-      if (existente) {
-        await ProductoTerminado.findOneAndUpdate(
-          { codigo_luminaria: cod },
-          { $inc: { stock_actual: item.cantidad_completada }, $set: { activo: true } }
-        )
-      } else {
-        await ProductoTerminado.create({
-          codigo_luminaria: cod,
-          nombre: item.modelo,
-          stock_actual: item.cantidad_completada,
-          activo: true,
-        })
-      }
     }
 
     const actualizado = await Proyecto.findByIdAndUpdate(
@@ -68,7 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     await registrarAuditoria({
       req, accion: 'editar', modulo: 'Proyectos',
-      detalle: `${nombre} marcó como LISTO el proyecto ${proyecto.numero} — stock acreditado`,
+      detalle: `${nombre} marcó como LISTO el proyecto ${proyecto.numero}`,
       dato_id: id,
     })
 

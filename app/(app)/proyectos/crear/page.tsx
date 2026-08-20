@@ -1,9 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, ArrowLeft } from 'lucide-react'
 
 interface Item { modelo: string; cantidad_solicitada: number; optica: string }
+interface RecetaOpcion { codigo: string; nombre: string; activa: boolean }
 
 const OPTICAS = ['14°', '24°', '38°', '60°', '65°', '100°', '120°', '140°', '160°']
 
@@ -15,8 +16,15 @@ export default function CrearProyectoPage() {
   const [prioridad, setPrioridad] = useState<'NORMAL' | 'URGENTE'>('NORMAL')
   const [notas, setNotas] = useState('')
   const [items, setItems] = useState<Item[]>([{ modelo: '', cantidad_solicitada: 1, optica: '' }])
+  const [recetas, setRecetas] = useState<RecetaOpcion[]>([])
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetch('/api/recetas')
+      .then((r) => r.json())
+      .then((data) => { if (data.ok) setRecetas(data.data.filter((r: RecetaOpcion) => r.activa)) })
+  }, [])
 
   const agregarItem = () => setItems((prev) => [...prev, { modelo: '', cantidad_solicitada: 1, optica: '' }])
   const quitarItem = (i: number) => setItems((prev) => prev.filter((_, idx) => idx !== i))
@@ -92,13 +100,18 @@ export default function CrearProyectoPage() {
           </button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 90px 36px', gap: '8px', marginBottom: '8px' }}>
-          {['Modelo', 'Óptica', 'Cantidad', ''].map((h) => (
+          {['Modelo (receta)', 'Óptica', 'Cantidad', ''].map((h) => (
             <div key={h} style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>{h}</div>
           ))}
         </div>
         {items.map((it, i) => (
           <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 90px 36px', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-            <input type="text" value={it.modelo} onChange={(e) => actualizarItem(i, 'modelo', e.target.value)} placeholder="Ej: SPORTLED 9 módulos" style={{ ...inputStyle, fontSize: '12px' }} />
+            <select value={it.modelo} onChange={(e) => actualizarItem(i, 'modelo', e.target.value)} style={{ ...inputStyle, fontSize: '12px' }}>
+              <option value="">Seleccionar receta...</option>
+              {recetas.map((r) => (
+                <option key={r.codigo} value={r.codigo}>{r.codigo} — {r.nombre}</option>
+              ))}
+            </select>
             <select value={it.optica} onChange={(e) => actualizarItem(i, 'optica', e.target.value)} style={{ ...inputStyle, fontSize: '12px' }}>
               <option value="">Óptica</option>
               {OPTICAS.map((o) => <option key={o} value={o}>{o}</option>)}
