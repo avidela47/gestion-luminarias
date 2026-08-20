@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Play, PackagePlus, CheckCircle, AlertTriangle, X, Plus } from 'lucide-react'
+import { Play, PackagePlus, CheckCircle, AlertTriangle, X, Plus, ArrowLeft } from 'lucide-react'
 
 interface Item { id: string; modelo: string; cantidad_solicitada: number; optica: string; cantidad_completada: number }
 interface Proyecto {
@@ -99,12 +99,19 @@ export default function FabricaProyectosPage() {
 
   return (
     <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div style={{ flex: 1, textAlign: 'center', marginLeft: esAdmin ? '140px' : '0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+        <button onClick={() => router.push('/dashboard')} style={{
+          display: 'flex', alignItems: 'center', gap: '6px',
+          padding: '8px 16px', borderRadius: '8px', border: '1px solid #1e3448',
+          backgroundColor: '#141f2b', color: '#94a3b8', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+        }}>
+          <ArrowLeft size={14} /> Volver
+        </button>
+        <div style={{ flex: 1, textAlign: 'center' }}>
           <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#fff', letterSpacing: '1px' }}>ITELSA — FÁBRICA</h1>
           <p style={{ fontSize: '14px', color: '#5eead4', marginTop: '6px' }}>Proyectos en producción</p>
         </div>
-        {esAdmin && (
+                {esAdmin ? (
           <button onClick={() => router.push('/proyectos')} style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             padding: '8px 16px', borderRadius: '8px', border: '1px solid #1e3448',
@@ -112,6 +119,8 @@ export default function FabricaProyectosPage() {
           }}>
             <Plus size={14} /> Gestionar proyectos
           </button>
+        ) : (
+          <div style={{ width: '140px' }} />
         )}
       </div>
 
