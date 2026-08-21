@@ -14,7 +14,7 @@ export interface OrdenTrabajo {
   id_cliente: string
   razon_social: string
   vendedor: string
-  lineas: { codigo_luminaria: string; descripcion: string; cantidad: number; cantidad_stock: number; cantidad_fabricar: number }[]
+  lineas: { codigo_luminaria: string; descripcion: string; cantidad: number }[]
   estado: string
   notas: string
   ejecutada: boolean
@@ -57,7 +57,7 @@ export default function OrdenesPage() {
     o.estado.toLowerCase().includes(busqueda.toLowerCase())
   )
 
-const eliminar = async (id: string) => {
+  const eliminar = async (id: string) => {
     await fetch(`/api/ordenes/${id}`, { method: 'DELETE' })
     setConfirmarEliminar(null)
     cargarOrdenes()
@@ -132,6 +132,7 @@ const eliminar = async (id: string) => {
             <tbody>
               {filtradas.map((o) => {
                 const cfg = estadoConfig[o.estado] ?? estadoConfig.Pendiente
+                const bloqueadoPorFabrica = o.estado === 'En fábrica'
                 return (
                   <tr key={o._id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--primary)' }}>
@@ -149,26 +150,35 @@ const eliminar = async (id: string) => {
                       {o.fecha_entrega ? new Date(o.fecha_entrega).toLocaleDateString('es-AR') : '—'}
                     </td>
                     <td style={{ padding: '10px 16px' }}>
-                      <select
-                        value={o.estado}
-                                                onChange={(e) => {
-  if (o.estado === 'En fábrica') return
-  if (!o.ejecutada && (e.target.value === 'En proceso' || e.target.value === 'Completada')) return
-  cambiarEstado(o._id, e.target.value)
-}}
-                        style={{
+                      {bloqueadoPorFabrica ? (
+                        <span style={{
                           fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '4px',
                           backgroundColor: cfg.bg, color: cfg.color,
                           border: `1px solid ${cfg.color}`,
-                          cursor: 'pointer', outline: 'none',
-                        }}
-                      >
-                                                <option value="Pendiente">Pendiente</option>
-                        
-                        <option value="En proceso">En proceso</option>
-                        <option value="Completada">Completada</option>
-                        <option value="Cancelada">Cancelada</option>
-                      </select>
+                          display: 'inline-block',
+                        }}>
+                          En fábrica
+                        </span>
+                      ) : (
+                        <select
+                          value={o.estado}
+                          onChange={(e) => {
+                            if (!o.ejecutada && (e.target.value === 'En proceso' || e.target.value === 'Completada')) return
+                            cambiarEstado(o._id, e.target.value)
+                          }}
+                          style={{
+                            fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '4px',
+                            backgroundColor: cfg.bg, color: cfg.color,
+                            border: `1px solid ${cfg.color}`,
+                            cursor: 'pointer', outline: 'none',
+                          }}
+                        >
+                          <option value="Pendiente">Pendiente</option>
+                          <option value="En proceso">En proceso</option>
+                          <option value="Completada">Completada</option>
+                          <option value="Cancelada">Cancelada</option>
+                        </select>
+                      )}
                     </td>
                     <td style={{ padding: '10px 16px' }}>
                       <div style={{ display: 'flex', gap: '8px' }}>
