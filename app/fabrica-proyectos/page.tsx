@@ -51,9 +51,30 @@ export default function FabricaProyectosPage() {
           const nuevos = activos.filter((p) => p.estado === 'NUEVO' && !idsConocidos.current!.has(p._id))
           if (nuevos.length > 0) {
             setAlertaNueva(nuevos[0])
-            try {
-              const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ==')
-              audio.play().catch(() => {})
+                        try {
+              const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+              const osc = ctx.createOscillator()
+              const gain = ctx.createGain()
+              osc.connect(gain)
+              gain.connect(ctx.destination)
+              osc.type = 'sine'
+              osc.frequency.value = 880
+              gain.gain.setValueAtTime(0.3, ctx.currentTime)
+              gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5)
+              osc.start()
+              osc.stop(ctx.currentTime + 0.5)
+              setTimeout(() => {
+                const osc2 = ctx.createOscillator()
+                const gain2 = ctx.createGain()
+                osc2.connect(gain2)
+                gain2.connect(ctx.destination)
+                osc2.type = 'sine'
+                osc2.frequency.value = 1046
+                gain2.gain.setValueAtTime(0.3, ctx.currentTime)
+                gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5)
+                osc2.start()
+                osc2.stop(ctx.currentTime + 0.5)
+              }, 300)
             } catch {}
           }
         }
