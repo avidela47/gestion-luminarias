@@ -1,4 +1,5 @@
 import Sidebar from '@/components/Sidebar'
+import ChatFlotante from '@/components/ChatFlotante'
 import { auth } from '@/auth'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -18,6 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       }}>
         {children}
       </main>
+      <ChatFlotante />
     </div>
   )
 }
