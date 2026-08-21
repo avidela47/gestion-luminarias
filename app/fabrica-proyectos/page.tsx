@@ -47,8 +47,9 @@ export default function FabricaProyectosPage() {
         if (!data.ok) return
         const activos: Proyecto[] = data.data.filter((p: Proyecto) => p.estado !== 'LISTO')
 
-        if (idsConocidos.current !== null) {
-          const nuevos = activos.filter((p) => p.estado === 'NUEVO' && !idsConocidos.current!.has(p._id))
+                const conocidosAntes = idsConocidos.current ?? new Set<string>()
+        {
+          const nuevos = activos.filter((p) => p.estado === 'NUEVO' && !conocidosAntes.has(p._id))
           if (nuevos.length > 0) {
             setAlertaNueva(nuevos[0])
                         try {
