@@ -1,8 +1,8 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Play, PackagePlus, CheckCircle, AlertTriangle, X, Plus, ArrowLeft } from 'lucide-react'
+import { Play, PackagePlus, CheckCircle, AlertTriangle, X, Plus, ArrowLeft, Bell } from 'lucide-react'
 
 interface Item { id: string; modelo: string; cantidad_solicitada: number; cantidad_completada: number }
 interface Proyecto {
@@ -10,7 +10,7 @@ interface Proyecto {
   numero: string
   cliente: string
   prioridad: 'NORMAL' | 'URGENTE'
-  estado: 'NUEVO' | 'PREPARACION' | 'FABRICACION' | 'LISTO'
+  estado: 'NUEVO' | 'PREPARACION' | 'FABRICACION' | 'LISTO' | 'EN_FABRICA'
   items: Item[]
   tomado_por: string | null
   notas: string
@@ -33,15 +33,33 @@ export default function FabricaProyectosPage() {
   const [loading, setLoading] = useState(true)
   const [modalAccion, setModalAccion] = useState<{ proyecto: Proyecto; tipo: AccionTipo } | null>(null)
   const [itemSel, setItemSel] = useState('')
-const [cantidadSel, setCantidadSel] = useState('')
-const [operarioSel, setOperarioSel] = useState('')
+  const [cantidadSel, setCantidadSel] = useState('')
+  const [operarioSel, setOperarioSel] = useState('')
   const [errorModal, setErrorModal] = useState('')
   const [procesando, setProcesando] = useState(false)
+  const [alertaNueva, setAlertaNueva] = useState<Proyecto | null>(null)
+  const idsConocidos = useRef<Set<string> | null>(null)
 
   const cargar = useCallback(() => {
     fetch('/api/proyectos')
       .then((r) => r.json())
-      .then((data) => { if (data.ok) setProyectos(data.data.filter((p: Proyecto) => p.estado !== 'LISTO')) })
+      .then((data) => {
+        if (!data.ok) return
+        const activos: Proyecto[] = data.data.filter((p: Proyecto) => p.estado !== 'LISTO')
+
+        if (idsConocidos.current !== null) {
+          const nuevos = activos.filter((p) => p.estado === 'NUEVO' && !idsConocidos.current!.has(p._id))
+          if (nuevos.length > 0) {
+            setAlertaNueva(nuevos[0])
+            try {
+              const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ==')
+              audio.play().catch(() => {})
+            } catch {}
+          }
+        }
+        idsConocidos.current = new Set(activos.map((p) => p._id))
+        setProyectos(activos)
+      })
       .finally(() => setLoading(false))
   }, [])
 
@@ -52,25 +70,25 @@ const [operarioSel, setOperarioSel] = useState('')
   }, [cargar])
 
   const abrirModal = (proyecto: Proyecto, tipo: AccionTipo) => {
-  setModalAccion({ proyecto, tipo })
-  setItemSel(proyecto.items.length === 1 ? proyecto.items[0].id : '')
-  setCantidadSel('')
-  setOperarioSel('')
-  setErrorModal('')
-}
+    setModalAccion({ proyecto, tipo })
+    setItemSel(proyecto.items.length === 1 ? proyecto.items[0].id : '')
+    setCantidadSel('')
+    setOperarioSel('')
+    setErrorModal('')
+  }
 
   const cerrarModal = () => setModalAccion(null)
 
   const confirmarAccion = async () => {
-  if (!modalAccion) return
-  setErrorModal('')
-  if (!operarioSel) return setErrorModal('Elegí quién realiza la acción')
+    if (!modalAccion) return
+    setErrorModal('')
+    if (!operarioSel) return setErrorModal('Elegí quién realiza la acción')
 
-  const { proyecto, tipo } = modalAccion
-  const url = `/api/proyectos/${proyecto._id}/${tipo}`
-  const body: Record<string, unknown> = { operario: operarioSel }
+    const { proyecto, tipo } = modalAccion
+    const url = `/api/proyectos/${proyecto._id}/${tipo}`
+    const body: Record<string, unknown> = { operario: operarioSel }
 
-  if (tipo === 'avance') {
+    if (tipo === 'avance') {
       if (!itemSel) return setErrorModal('Elegí el modelo')
       const cant = Number(cantidadSel)
       if (!cant || cant <= 0) return setErrorModal('Ingresá una cantidad válida')
@@ -102,7 +120,7 @@ const [operarioSel, setOperarioSel] = useState('')
 
   return (
     <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <button onClick={() => router.push('/dashboard')} style={{
           display: 'flex', alignItems: 'center', gap: '6px',
           padding: '8px 16px', borderRadius: '8px', border: '1px solid #1e3448',
@@ -114,7 +132,7 @@ const [operarioSel, setOperarioSel] = useState('')
           <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#fff', letterSpacing: '1px' }}>ITELSA — FÁBRICA</h1>
           <p style={{ fontSize: '14px', color: '#5eead4', marginTop: '6px' }}>Proyectos en producción</p>
         </div>
-                {esAdmin ? (
+        {esAdmin ? (
           <button onClick={() => router.push('/proyectos')} style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             padding: '8px 16px', borderRadius: '8px', border: '1px solid #1e3448',
@@ -134,7 +152,7 @@ const [operarioSel, setOperarioSel] = useState('')
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
           {proyectos.map((p) => {
-            const cfg = estadoConfig[p.estado]
+            const cfg = estadoConfig[p.estado] ?? estadoConfig.NUEVO
             const totalSol = p.items.reduce((a, i) => a + i.cantidad_solicitada, 0)
             const totalComp = p.items.reduce((a, i) => a + i.cantidad_completada, 0)
             const pct = totalSol > 0 ? Math.round((totalComp / totalSol) * 100) : 0
@@ -225,21 +243,21 @@ const [operarioSel, setOperarioSel] = useState('')
 
             <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '16px' }}>{modalAccion.proyecto.numero} — {modalAccion.proyecto.cliente}</div>
 
-<label style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', display: 'block', marginBottom: '4px' }}>OPERARIO</label>
-<div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
-  {['Fabio', 'Cristian', 'Pajarito'].map((op) => (
-    <button key={op} onClick={() => setOperarioSel(op)} style={{
-      padding: '10px 6px', borderRadius: '8px', fontSize: '12px', fontWeight: 700,
-      border: operarioSel === op ? '2px solid #2d7d78' : '1px solid #1e3448',
-      backgroundColor: operarioSel === op ? '#2d7d7822' : '#0f1923',
-      color: operarioSel === op ? '#5eead4' : '#94a3b8', cursor: 'pointer',
-    }}>
-      {op}
-    </button>
-  ))}
-</div>
+            <label style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', display: 'block', marginBottom: '4px' }}>OPERARIO</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
+              {['Fabio', 'Cristian', 'Pajarito'].map((op) => (
+                <button key={op} onClick={() => setOperarioSel(op)} style={{
+                  padding: '10px 6px', borderRadius: '8px', fontSize: '12px', fontWeight: 700,
+                  border: operarioSel === op ? '2px solid #2d7d78' : '1px solid #1e3448',
+                  backgroundColor: operarioSel === op ? '#2d7d7822' : '#0f1923',
+                  color: operarioSel === op ? '#5eead4' : '#94a3b8', cursor: 'pointer',
+                }}>
+                  {op}
+                </button>
+              ))}
+            </div>
 
-{modalAccion.tipo === 'avance' && (
+            {modalAccion.tipo === 'avance' && (
               <>
                 <label style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', display: 'block', marginBottom: '4px' }}>MODELO</label>
                 <select value={itemSel} onChange={(e) => setItemSel(e.target.value)} style={{
@@ -278,6 +296,40 @@ const [operarioSel, setOperarioSel] = useState('')
           </div>
         </div>
       )}
+
+      {alertaNueva && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 400, backgroundColor: 'rgba(220,38,38,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{
+            backgroundColor: '#141f2b', border: '3px solid #ef4444', borderRadius: '20px',
+            padding: '48px', maxWidth: '480px', width: '100%', textAlign: 'center',
+            boxShadow: '0 0 60px rgba(239,68,68,0.5)', animation: 'pulse 1.2s infinite',
+          }}>
+            <Bell size={56} color="#ef4444" style={{ marginBottom: '16px' }} />
+            <div style={{ fontSize: '13px', fontWeight: 700, color: '#f87171', letterSpacing: '2px', marginBottom: '8px' }}>
+              NUEVA ORDEN DE TRABAJO
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, color: '#fff', marginBottom: '8px' }}>
+              {alertaNueva.numero}
+            </div>
+            <div style={{ fontSize: '15px', color: '#94a3b8', marginBottom: '28px' }}>
+              {alertaNueva.cliente}
+            </div>
+            <button onClick={() => setAlertaNueva(null)} style={{
+              padding: '12px 32px', borderRadius: '10px', border: 'none',
+              backgroundColor: '#ef4444', color: '#fff', fontSize: '15px', fontWeight: 700, cursor: 'pointer',
+            }}>
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { box-shadow: 0 0 60px rgba(239,68,68,0.5); }
+          50% { box-shadow: 0 0 90px rgba(239,68,68,0.8); }
+        }
+      `}</style>
     </div>
   )
 }

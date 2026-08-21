@@ -73,7 +73,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (aFabricar.length > 0) {
       if (orden.id_proyecto_fabrica) {
         const proyectoExistente = await Proyecto.findById(orden.id_proyecto_fabrica)
-        if (proyectoExistente && proyectoExistente.estado !== 'LISTO') {
+                if (proyectoExistente && proyectoExistente.estado !== 'LISTO') {
+          if (orden.estado !== 'En fábrica') {
+            await OrdenTrabajo.findByIdAndUpdate(id, { $set: { estado: 'En fábrica' } })
+          }
           return NextResponse.json({
             ok: false,
             error: `Ya hay un proyecto de fábrica en curso: ${proyectoExistente.numero}. Esperá a que esté LISTO.`,
@@ -107,7 +110,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         numero_orden_trabajo: orden.numero,
       })
 
-      await OrdenTrabajo.findByIdAndUpdate(id, { $set: { id_proyecto_fabrica: proyecto._id.toString() } })
+      await OrdenTrabajo.findByIdAndUpdate(id, { $set: { id_proyecto_fabrica: proyecto._id.toString(), estado: 'En fábrica' } })
 
       await registrarAuditoria({
         req, accion: 'crear', modulo: 'Proyectos',

@@ -23,6 +23,7 @@ export interface OrdenTrabajo {
 
 const estadoConfig: Record<string, { color: string; bg: string }> = {
   Pendiente:    { color: 'var(--warning)',   bg: 'var(--warning-bg)' },
+  'En fábrica': { color: '#8b5cf6',          bg: '#8b5cf618' },
   'En proceso': { color: 'var(--secondary)', bg: 'var(--info-bg)' },
   Completada:   { color: 'var(--success)',   bg: 'var(--success-bg)' },
   Cancelada:    { color: 'var(--danger)',    bg: 'var(--danger-bg)' },
@@ -150,8 +151,9 @@ const eliminar = async (id: string) => {
                     <td style={{ padding: '10px 16px' }}>
                       <select
                         value={o.estado}
-                        onChange={(e) => {
-  if (!o.ejecutada) return
+                                                onChange={(e) => {
+  if (o.estado === 'En fábrica') return
+  if (!o.ejecutada && (e.target.value === 'En proceso' || e.target.value === 'Completada')) return
   cambiarEstado(o._id, e.target.value)
 }}
                         style={{
@@ -161,7 +163,8 @@ const eliminar = async (id: string) => {
                           cursor: 'pointer', outline: 'none',
                         }}
                       >
-                        <option value="Pendiente">Pendiente</option>
+                                                <option value="Pendiente">Pendiente</option>
+                        <option value="En fábrica">En fábrica</option>
                         <option value="En proceso">En proceso</option>
                         <option value="Completada">Completada</option>
                         <option value="Cancelada">Cancelada</option>

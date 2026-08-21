@@ -63,7 +63,7 @@ const OrdenTrabajoSchema = new Schema<IOrdenTrabajo>(
     lineas: { type: [LineaOrdenSchema], default: [] },
     estado: {
       type: String,
-      enum: ['Pendiente', 'En proceso', 'Completada', 'Cancelada'],
+      enum: ['Pendiente', 'En fábrica', 'En proceso', 'Completada', 'Cancelada'],
       default: 'Pendiente',
     },
     notas: { type: String, default: '' },
