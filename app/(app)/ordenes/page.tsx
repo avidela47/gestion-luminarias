@@ -164,7 +164,7 @@ const eliminar = async (id: string) => {
                         }}
                       >
                                                 <option value="Pendiente">Pendiente</option>
-                        <option value="En fábrica">En fábrica</option>
+                        
                         <option value="En proceso">En proceso</option>
                         <option value="Completada">Completada</option>
                         <option value="Cancelada">Cancelada</option>
