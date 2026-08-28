@@ -145,7 +145,7 @@ export default function VerOrdenPage() {
           }}>
           <Printer size={15} /> Imprimir
         </button>
-        {!orden.ejecutada && (
+        {!orden.ejecutada && orden.estado !== 'En fábrica' && (
           <>
             <button onClick={() => setConfirmarEliminar(true)}
               style={{
@@ -167,10 +167,16 @@ export default function VerOrdenPage() {
             </button>
           </>
         )}
-        {orden.ejecutada && (
+                {orden.ejecutada && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--success)', fontSize: '13px', fontWeight: 600 }}>
             <CheckCircle size={16} />
             Ejecutada el {new Date(orden.fecha_ejecucion).toLocaleDateString('es-AR')}
+          </div>
+        )}
+        {!orden.ejecutada && orden.estado === 'En fábrica' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--warning)', fontSize: '13px', fontWeight: 600 }}>
+            <AlertTriangle size={16} />
+            En fábrica — esperando producción
           </div>
         )}
       </div>
