@@ -29,11 +29,14 @@ export default function ClientesPage() {
   const [clienteEditar, setClienteEditar] = useState<Cliente | null>(null)
   const [confirmarEliminar, setConfirmarEliminar] = useState<string | null>(null)
 
+  const ordenar = (data: Cliente[]) =>
+    [...data].sort((a, b) => a.id_cliente.localeCompare(b.id_cliente))
+
   useEffect(() => {
     fetch('/api/clientes')
       .then((r) => r.json())
       .then((data) => {
-        if (data.ok) setClientes(data.data)
+        if (data.ok) setClientes(ordenar(data.data))
         setLoading(false)
       })
   }, [])
@@ -41,7 +44,7 @@ export default function ClientesPage() {
   const cargarClientes = () => {
     fetch('/api/clientes')
       .then((r) => r.json())
-      .then((data) => { if (data.ok) setClientes(data.data) })
+      .then((data) => { if (data.ok) setClientes(ordenar(data.data)) })
   }
 
   const filtrados = clientes.filter((c) =>
@@ -59,7 +62,6 @@ export default function ClientesPage() {
 
   return (
     <div style={{ padding: '32px', maxWidth: '1200px' }}>
-      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)' }}>Clientes</h1>
@@ -80,7 +82,6 @@ export default function ClientesPage() {
         </button>
       </div>
 
-      {/* Buscador */}
       <div style={{ position: 'relative', marginBottom: '16px', maxWidth: '360px' }}>
         <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
         <input
@@ -97,7 +98,6 @@ export default function ClientesPage() {
         />
       </div>
 
-      {/* Tabla */}
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando...</div>

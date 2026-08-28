@@ -49,6 +49,16 @@ export default function ModalCliente({ cliente, onClose, onGuardado }: Props) {
     if (!form.id_cliente.trim()) return setError('El código es obligatorio')
     if (!form.nombre.trim()) return setError('El nombre es obligatorio')
 
+    if (!esEdicion) {
+      const check = await fetch('/api/clientes').then((r) => r.json())
+      if (check.ok) {
+        const existe = check.data.find((c: { id_cliente: string }) =>
+          c.id_cliente.toLowerCase() === form.id_cliente.trim().toLowerCase()
+        )
+        if (existe) return setError(`Ya existe un cliente con el código ${form.id_cliente.toUpperCase()}`)
+      }
+    }
+
     setGuardando(true)
     const url = esEdicion ? `/api/clientes/${encodeURIComponent(cliente.id_cliente)}` : '/api/clientes'
     const method = esEdicion ? 'PUT' : 'POST'
@@ -99,7 +109,6 @@ export default function ModalCliente({ cliente, onClose, onGuardado }: Props) {
         width: '100%', maxWidth: '600px', maxHeight: '90vh',
         overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
       }}>
-        {/* Header */}
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '20px 24px', borderBottom: '1px solid var(--border)',
@@ -113,66 +122,51 @@ export default function ModalCliente({ cliente, onClose, onGuardado }: Props) {
           </button>
         </div>
 
-        {/* Body */}
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {campo('Código *', 'id_cliente', 'text', 'Ej: CLI-001')}
             {campo('Nombre *', 'nombre', 'text', 'Nombre comercial')}
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {campo('Razón social', 'razon_social', 'text', 'Razón social legal')}
             {campo('CUIT', 'cuit', 'text', 'Ej: 20-12345678-9')}
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {campo('Teléfono', 'telefono', 'text', 'Ej: 351 123-4567')}
             {campo('Email', 'email', 'email', 'correo@empresa.com')}
           </div>
-
           {campo('Dirección', 'direccion', 'text', 'Calle y número')}
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {campo('Localidad', 'localidad', 'text', 'Ciudad')}
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
                 Provincia
               </label>
-              <select
-                name="provincia"
-                value={form.provincia}
-                onChange={handleChange}
+              <select name="provincia" value={form.provincia} onChange={handleChange}
                 style={{
                   width: '100%', padding: '8px 10px',
                   border: '1px solid var(--border)', borderRadius: '6px',
                   fontSize: '13px', backgroundColor: 'var(--input-bg)',
                   color: 'var(--text-primary)', outline: 'none',
-                }}
-              >
+                }}>
                 <option value="">Seleccionar...</option>
                 {provincias.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {campo('Contacto', 'contacto', 'text', 'Persona de contacto')}
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
                 Condición IVA
               </label>
-              <select
-                name="condicion_iva"
-                value={form.condicion_iva}
-                onChange={handleChange}
+              <select name="condicion_iva" value={form.condicion_iva} onChange={handleChange}
                 style={{
                   width: '100%', padding: '8px 10px',
                   border: '1px solid var(--border)', borderRadius: '6px',
                   fontSize: '13px', backgroundColor: 'var(--input-bg)',
                   color: 'var(--text-primary)', outline: 'none',
-                }}
-              >
+                }}>
                 <option value="Responsable Inscripto">Responsable Inscripto</option>
                 <option value="Responsable Inscripto 10">Responsable Inscripto 10</option>
                 <option value="Responsable Inscripto M">Responsable Inscripto M</option>
@@ -185,23 +179,17 @@ export default function ModalCliente({ cliente, onClose, onGuardado }: Props) {
               </select>
             </div>
           </div>
-
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
               Notas
             </label>
-            <textarea
-              name="notas"
-              value={form.notas}
-              onChange={handleChange}
-              rows={2}
+            <textarea name="notas" value={form.notas} onChange={handleChange} rows={2}
               style={{
                 width: '100%', padding: '8px 10px',
                 border: '1px solid var(--border)', borderRadius: '6px',
                 fontSize: '13px', backgroundColor: 'var(--input-bg)',
                 color: 'var(--text-primary)', outline: 'none', resize: 'vertical',
-              }}
-            />
+              }} />
           </div>
 
           {error && (
@@ -214,7 +202,6 @@ export default function ModalCliente({ cliente, onClose, onGuardado }: Props) {
           )}
         </div>
 
-        {/* Footer */}
         <div style={{
           display: 'flex', justifyContent: 'flex-end', gap: '10px',
           padding: '16px 24px', borderTop: '1px solid var(--border)',

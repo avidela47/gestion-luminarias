@@ -37,6 +37,16 @@ export default function ModalProveedor({ proveedor, onClose, onGuardado }: Props
     if (!form.id_proveedor.trim()) return setError('El código es obligatorio')
     if (!form.nombre.trim()) return setError('El nombre es obligatorio')
 
+    if (!esEdicion) {
+      const check = await fetch('/api/proveedores').then((r) => r.json())
+      if (check.ok) {
+        const existe = check.data.find((p: { id_proveedor: string }) =>
+          p.id_proveedor.toLowerCase() === form.id_proveedor.trim().toLowerCase()
+        )
+        if (existe) return setError(`Ya existe un proveedor con el código ${form.id_proveedor.toUpperCase()}`)
+      }
+    }
+
     setGuardando(true)
     const url = esEdicion
       ? `/api/proveedores/${encodeURIComponent(proveedor.id_proveedor)}`
@@ -120,18 +130,13 @@ export default function ModalProveedor({ proveedor, onClose, onGuardado }: Props
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
               Notas
             </label>
-            <textarea
-              name="notas"
-              value={form.notas}
-              onChange={handleChange}
-              rows={2}
+            <textarea name="notas" value={form.notas} onChange={handleChange} rows={2}
               style={{
                 width: '100%', padding: '8px 10px',
                 border: '1px solid var(--border)', borderRadius: '6px',
                 fontSize: '13px', backgroundColor: 'var(--input-bg)',
                 color: 'var(--text-primary)', outline: 'none', resize: 'vertical',
-              }}
-            />
+              }} />
           </div>
 
           {error && (

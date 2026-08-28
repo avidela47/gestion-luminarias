@@ -25,11 +25,14 @@ export default function ProveedoresPage() {
   const [proveedorEditar, setProveedorEditar] = useState<Proveedor | null>(null)
   const [confirmarEliminar, setConfirmarEliminar] = useState<string | null>(null)
 
+  const ordenar = (data: Proveedor[]) =>
+    [...data].sort((a, b) => a.id_proveedor.localeCompare(b.id_proveedor))
+
   useEffect(() => {
     fetch('/api/proveedores')
       .then((r) => r.json())
       .then((data) => {
-        if (data.ok) setProveedores(data.data)
+        if (data.ok) setProveedores(ordenar(data.data))
         setLoading(false)
       })
   }, [])
@@ -37,7 +40,7 @@ export default function ProveedoresPage() {
   const cargarProveedores = () => {
     fetch('/api/proveedores')
       .then((r) => r.json())
-      .then((data) => { if (data.ok) setProveedores(data.data) })
+      .then((data) => { if (data.ok) setProveedores(ordenar(data.data)) })
   }
 
   const filtrados = proveedores.filter((p) =>
