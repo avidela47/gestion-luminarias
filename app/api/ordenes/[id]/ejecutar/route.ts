@@ -7,6 +7,7 @@ import SensorFuente from '@/models/SensorFuente'
 import Proyecto from '@/models/Proyecto'
 import Counter from '@/models/Counter'
 import { registrarAuditoria } from '@/lib/auditoria'
+import { enviarMailOT } from '@/lib/mailer'
 
 type Tipo = 'fabricada' | 'comercial' | 'sensor'
 
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (aFabricar.length > 0) {
       if (orden.id_proyecto_fabrica) {
         const proyectoExistente = await Proyecto.findById(orden.id_proyecto_fabrica)
-                if (proyectoExistente && proyectoExistente.estado !== 'LISTO') {
+        if (proyectoExistente && proyectoExistente.estado !== 'LISTO') {
           if (orden.estado !== 'En fábrica') {
             await OrdenTrabajo.findByIdAndUpdate(id, { $set: { estado: 'En fábrica' } })
           }
@@ -110,7 +111,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         numero_orden_trabajo: orden.numero,
       })
 
-      await OrdenTrabajo.findByIdAndUpdate(id, { $set: { id_proyecto_fabrica: proyecto._id.toString(), estado: 'En fábrica' } })
+      await OrdenTrabajo.findByIdAndUpdate(id, {
+        $set: { id_proyecto_fabrica: proyecto._id.toString(), estado: 'En fábrica' },
+      })
 
       await registrarAuditoria({
         req, accion: 'crear', modulo: 'Proyectos',
@@ -146,6 +149,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       detalle: `Ejecutó OT ${orden.numero} — descontó stock de ${planDescuento.length} ítem(s)`,
       dato_id: id,
     })
+
+    try {
+      await enviarMailOT({
+        numero: orden.numero,
+        cliente: orden.razon_social,
+        vendedor: orden.vendedor,
+        fecha: new Date(orden.fecha).toLocaleDateString('es-AR'),
+        fecha_entrega: orden.fecha_entrega
+          ? new Date(orden.fecha_entrega).toLocaleDateString('es-AR')
+          : undefined,
+        lineas: orden.lineas,
+      })
+    } catch (mailError) {
+      console.error('[mail OT] error:', mailError)
+    }
 
     return NextResponse.json({
       ok: true,
