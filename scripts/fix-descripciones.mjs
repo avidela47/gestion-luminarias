@@ -7,20 +7,24 @@ const client = new MongoClient(process.env.MONGODB_URI)
 await client.connect()
 const db = client.db('gestion-luminarias')
 
-const colecciones = ['productoterminados', 'luminariacomericals']
+const colecciones = [
+  { nombre: 'productoterminados', campo: 'nombre' },
+  { nombre: 'luminariacomercials', campo: 'descripcion' },
+]
 
-for (const col of colecciones) {
-  const docs = await db.collection(col).find({ nombre: /EFIC\. LM\/W/ }).toArray()
-  console.log(`${col}: ${docs.length} documentos a actualizar`)
+for (const { nombre, campo } of colecciones) {
+  const query = { [campo]: /EFIC\. LM\/W/ }
+  const docs = await db.collection(nombre).find(query).toArray()
+  console.log(`${nombre}: ${docs.length} documentos a actualizar`)
   for (const doc of docs) {
-    const nuevoNombre = doc.nombre.replace('EFIC. LM/W', 'EFIC. 160 LM/W')
-    await db.collection(col).updateOne(
+    const nuevoValor = doc[campo].replace(/EFIC\. LM\/W/g, 'EFIC. 160 LM/W')
+    await db.collection(nombre).updateOne(
       { _id: doc._id },
-      { $set: { nombre: nuevoNombre } }
+      { $set: { [campo]: nuevoValor } }
     )
-    console.log(`✅ ${doc.codigo_luminaria}`)
+    console.log(`✅ ${doc.codigo || doc.codigo_luminaria}`)
   }
 }
 
 await client.close()
-console.log('✅ Listo')
+console.log('✅ Listo') 
