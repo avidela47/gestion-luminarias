@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react'
 import { Plus, Search, Pencil, Trash2, Zap } from 'lucide-react'
 import ModalSensor from './ModalSensor'
-import * as XLSX from 'xlsx'
-import { Download } from 'lucide-react'
 
 export interface SensorFuente {
   _id: string
@@ -43,11 +41,16 @@ export default function SensoresPage() {
       .then((data) => { if (data.ok) setItems(data.data) })
   }
 
+  const esEluxen = (item: SensorFuente) => item.codigo.endsWith('-EL')
+
   const filtrados = items.filter((i) => {
     const matchBusqueda =
       i.codigo.toLowerCase().includes(busqueda.toLowerCase()) ||
       i.descripcion.toLowerCase().includes(busqueda.toLowerCase())
-    const matchTipo = filtroTipo === 'todos' || i.tipo === filtroTipo
+    const matchTipo =
+      filtroTipo === 'todos' ? true :
+      filtroTipo === 'eluxen' ? esEluxen(i) :
+      i.tipo === filtroTipo && !esEluxen(i)
     return matchBusqueda && matchTipo
   })
 
@@ -57,22 +60,24 @@ export default function SensoresPage() {
     cargar()
   }
 
-  const exportarExcel = () => {
-  const datos = filtrados.map((i) => ({
-    Código: i.codigo,
-    Descripción: i.descripcion,
-    Tipo: i.tipo.replace(/_/g, ' '),
-    'Stock actual': i.stock_actual,
-    'Stock mínimo': i.stock_minimo,
-    'Precio U$S': i.precio,
-    Proveedor: i.proveedor || '',
-    Notas: i.notas || '',
-  }))
-  const ws = XLSX.utils.json_to_sheet(datos)
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, 'Sensores y Fuentes')
-  XLSX.writeFile(wb, `sensores-fuentes-${new Date().toISOString().slice(0, 10)}.xlsx`)
-}
+  const btnFiltro = (label: string, valor: string, color?: string) => {
+    const activo = filtroTipo === valor
+    return (
+      <button
+        key={valor}
+        onClick={() => setFiltroTipo(valor)}
+        style={{
+          padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
+          border: `1px solid ${color ?? 'var(--border)'}`,
+          cursor: 'pointer',
+          backgroundColor: activo ? (color ?? 'var(--primary)') : 'transparent',
+          color: activo ? '#fff' : (color ?? 'var(--text-secondary)'),
+          transition: 'all 0.15s',
+        }}>
+        {label}
+      </button>
+    )
+  }
 
   return (
     <div style={{ padding: '32px', maxWidth: '1200px' }}>
@@ -83,30 +88,20 @@ export default function SensoresPage() {
             Stock de sensores y fuentes de alimentación
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-  <button onClick={exportarExcel}
-    style={{
-      display: 'flex', alignItems: 'center', gap: '8px',
-      backgroundColor: 'transparent', color: 'var(--primary)',
-      border: '1px solid var(--primary)', borderRadius: '8px',
-      padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-    }}>
-    <Download size={16} /> Exportar Excel
-  </button>
-  <button onClick={() => { setItemEditar(null); setModalAbierto(true) }}
-    style={{
-      display: 'flex', alignItems: 'center', gap: '8px',
-      backgroundColor: 'var(--primary)', color: '#fff',
-      border: 'none', borderRadius: '8px',
-      padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
-    }}>
-    <Plus size={16} /> Nuevo producto
-  </button>
-</div>
+        <button
+          onClick={() => { setItemEditar(null); setModalAbierto(true) }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            backgroundColor: 'var(--primary)', color: '#fff',
+            border: 'none', borderRadius: '8px',
+            padding: '9px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+          }}
+        >
+          <Plus size={16} /> Nuevo producto
+        </button>
       </div>
 
-      {/* Filtros */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ position: 'relative' }}>
           <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
@@ -122,17 +117,31 @@ export default function SensoresPage() {
             }}
           />
         </div>
-        {(['todos', 'sensor', 'fuente'] as const).map((t) => (
-          <button key={t} onClick={() => setFiltroTipo(t)}
-            style={{
-              padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
-              border: '1px solid var(--border)', cursor: 'pointer',
-              backgroundColor: filtroTipo === t ? 'var(--primary)' : 'transparent',
-              color: filtroTipo === t ? '#fff' : 'var(--text-secondary)',
-            }}>
-            {t === 'todos' ? 'Todos' : t === 'sensor' ? 'Sensores' : 'Fuentes'}
-          </button>
-        ))}
+        {btnFiltro('Todos', 'todos')}
+        {btnFiltro('Sensores', 'sensor')}
+        {btnFiltro('Fuentes', 'fuente')}
+        {btnFiltro('ELUXEN', 'eluxen', '#7c3aed')}
+        <select
+          value={filtroTipo === 'todos' || filtroTipo === 'sensor' || filtroTipo === 'fuente' || filtroTipo === 'eluxen' ? filtroTipo : filtroTipo}
+          onChange={(e) => setFiltroTipo(e.target.value)}
+          style={{
+            padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '8px',
+            fontSize: '13px', backgroundColor: 'var(--input-bg)',
+            color: 'var(--text-primary)', outline: 'none', cursor: 'pointer',
+          }}
+        >
+          <option value="todos">Todos los tipos</option>
+          <option value="sensor">Sensor</option>
+          <option value="fuente">Fuente</option>
+          <option value="eluxen">ELUXEN</option>
+          <option value="acoplamiento_flexible">Acoplamiento Flexible</option>
+          <option value="actuador">Actuador</option>
+          <option value="espejo">Espejo</option>
+          <option value="iluminacion">Iluminación</option>
+          <option value="interruptor_actuador">Interruptor - Actuador</option>
+          <option value="modulo_seguridad">Módulo de Seguridad</option>
+          <option value="soporte">Soporte</option>
+        </select>
       </div>
 
       <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '10px', overflow: 'hidden' }}>
@@ -157,17 +166,32 @@ export default function SensoresPage() {
             <tbody>
               {filtrados.map((item) => {
                 const bajoMinimo = item.stock_actual < item.stock_minimo
+                const eluxen = esEluxen(item)
                 return (
-                  <tr key={item._id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--primary)' }}>{item.codigo}</td>
+                  <tr key={item._id} style={{
+                    borderBottom: '1px solid var(--border)',
+                    backgroundColor: eluxen ? '#f5f3ff' : 'transparent',
+                  }}>
+                    <td style={{ padding: '10px 16px', fontWeight: 600, color: eluxen ? '#7c3aed' : 'var(--primary)' }}>
+                      {item.codigo}
+                      {eluxen && (
+                        <span style={{
+                          marginLeft: '6px', fontSize: '10px', fontWeight: 700,
+                          backgroundColor: '#7c3aed', color: '#fff',
+                          padding: '1px 6px', borderRadius: '4px',
+                        }}>
+                          EL
+                        </span>
+                      )}
+                    </td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-primary)' }}>{item.descripcion}</td>
                     <td style={{ padding: '10px 16px' }}>
                       <span style={{
                         fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px',
-                        backgroundColor: 'var(--info-bg)',
-                        color: 'var(--info)',
+                        backgroundColor: eluxen ? '#ede9fe' : item.tipo === 'sensor' ? 'var(--info-bg)' : 'var(--warning-bg)',
+                        color: eluxen ? '#7c3aed' : item.tipo === 'sensor' ? 'var(--info)' : 'var(--warning)',
                       }}>
-                        {item.tipo.replace(/_/g, ' ').toUpperCase()}
+                        {eluxen ? 'ELUXEN' : item.tipo === 'sensor' ? 'SENSOR' : item.tipo.toUpperCase()}
                       </span>
                     </td>
                     <td style={{ padding: '10px 16px', fontWeight: 600, color: bajoMinimo ? 'var(--danger)' : 'var(--success)' }}>
