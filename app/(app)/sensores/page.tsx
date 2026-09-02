@@ -174,15 +174,7 @@ export default function SensoresPage() {
                   }}>
                     <td style={{ padding: '10px 16px', fontWeight: 600, color: eluxen ? '#7c3aed' : 'var(--primary)' }}>
                       {item.codigo}
-                      {eluxen && (
-                        <span style={{
-                          marginLeft: '6px', fontSize: '10px', fontWeight: 700,
-                          backgroundColor: '#7c3aed', color: '#fff',
-                          padding: '1px 6px', borderRadius: '4px',
-                        }}>
-                          EL
-                        </span>
-                      )}
+                     
                     </td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-primary)' }}>{item.descripcion}</td>
                     <td style={{ padding: '10px 16px' }}>
