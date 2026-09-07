@@ -8,7 +8,7 @@ await client.connect()
 const db = client.db('gestion-luminarias')
 const col = db.collection('luminariacomercials')
 
-const notas = [
+const items = [
   { codigo: 'IT-HL23-TA01', notas: 'Power: 9W · CCT: W/WW (4000K) DMX512 · Chip: OSRAM · Voltage: 220V/CA · Size: W110*L110*H153mm · Angle: 45°/22mm lens · Material: AL + TG IP65' },
   { codigo: 'IT-HLDD1616-RGBW', notas: 'Power: 12W/M · Size: W16*H16*10000mm · Color: RGBW(3000K) · Beam Angle: 110° DMX512 · LEDs: EPISTAR · Voltage: DC24V IP65 · Pkg: 10 metros por rollo' },
   { codigo: 'IT-HLDD1616-3000K', notas: 'Power: 12W/M · Size: W16*H16*10000mm · Color: 3000K · Beam Angle: 110° · LEDs: EPISTAR · Voltage: DC24V IP65 · Pkg: 5 metros por rollo' },
@@ -29,16 +29,16 @@ const notas = [
 ]
 
 let actualizados = 0
-for (const { codigo, notas } of notas) {
+for (const item of items) {
   const res = await col.updateOne(
-    { codigo },
-    { $set: { notas, updatedAt: new Date() } }
+    { codigo: item.codigo },
+    { $set: { notas: item.notas, updatedAt: new Date() } }
   )
   if (res.modifiedCount > 0) {
-    console.log(`✅ ${codigo}`)
+    console.log(`✅ ${item.codigo}`)
     actualizados++
   } else {
-    console.log(`⚠️ No encontrado: ${codigo}`)
+    console.log(`⚠️ No encontrado: ${item.codigo}`)
   }
 }
 
