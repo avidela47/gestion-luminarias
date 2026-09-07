@@ -14,6 +14,8 @@ export interface Componente {
   proveedor: string
   precio_unitario: number
   ubicacion: string
+  notas: string
+  foto: string
   activo: boolean
 }
 
