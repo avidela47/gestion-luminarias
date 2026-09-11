@@ -41,16 +41,11 @@ export default function SensoresPage() {
       .then((data) => { if (data.ok) setItems(data.data) })
   }
 
-  const esEluxen = (item: SensorFuente) => item.codigo.endsWith('-EL')
-
   const filtrados = items.filter((i) => {
     const matchBusqueda =
       i.codigo.toLowerCase().includes(busqueda.toLowerCase()) ||
       i.descripcion.toLowerCase().includes(busqueda.toLowerCase())
-    const matchTipo =
-      filtroTipo === 'todos' ? true :
-      filtroTipo === 'eluxen' ? esEluxen(i) :
-      i.tipo === filtroTipo && !esEluxen(i)
+    const matchTipo = filtroTipo === 'todos' || i.tipo === filtroTipo
     return matchBusqueda && matchTipo
   })
 
@@ -58,25 +53,6 @@ export default function SensoresPage() {
     await fetch(`/api/sensores/${encodeURIComponent(codigo)}`, { method: 'DELETE' })
     setConfirmarEliminar(null)
     cargar()
-  }
-
-  const btnFiltro = (label: string, valor: string, color?: string) => {
-    const activo = filtroTipo === valor
-    return (
-      <button
-        key={valor}
-        onClick={() => setFiltroTipo(valor)}
-        style={{
-          padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 500,
-          border: `1px solid ${color ?? 'var(--border)'}`,
-          cursor: 'pointer',
-          backgroundColor: activo ? (color ?? 'var(--primary)') : 'transparent',
-          color: activo ? '#fff' : (color ?? 'var(--text-secondary)'),
-          transition: 'all 0.15s',
-        }}>
-        {label}
-      </button>
-    )
   }
 
   return (
@@ -117,12 +93,8 @@ export default function SensoresPage() {
             }}
           />
         </div>
-        {btnFiltro('Todos', 'todos')}
-        {btnFiltro('Sensores', 'sensor')}
-        {btnFiltro('Fuentes', 'fuente')}
-        {btnFiltro('ELUXEN', 'eluxen', '#7c3aed')}
         <select
-          value={filtroTipo === 'todos' || filtroTipo === 'sensor' || filtroTipo === 'fuente' || filtroTipo === 'eluxen' ? filtroTipo : filtroTipo}
+          value={filtroTipo}
           onChange={(e) => setFiltroTipo(e.target.value)}
           style={{
             padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '8px',
@@ -133,7 +105,6 @@ export default function SensoresPage() {
           <option value="todos">Todos los tipos</option>
           <option value="sensor">Sensor</option>
           <option value="fuente">Fuente</option>
-          <option value="eluxen">ELUXEN</option>
           <option value="acoplamiento_flexible">Acoplamiento Flexible</option>
           <option value="actuador">Actuador</option>
           <option value="espejo">Espejo</option>
@@ -166,24 +137,17 @@ export default function SensoresPage() {
             <tbody>
               {filtrados.map((item) => {
                 const bajoMinimo = item.stock_actual < item.stock_minimo
-                const eluxen = esEluxen(item)
                 return (
-                  <tr key={item._id} style={{
-                    borderBottom: '1px solid var(--border)',
-                    backgroundColor: eluxen ? '#f5f3ff' : 'transparent',
-                  }}>
-                    <td style={{ padding: '10px 16px', fontWeight: 600, color: eluxen ? '#7c3aed' : 'var(--primary)' }}>
-                      {item.codigo}
-                     
-                    </td>
+                  <tr key={item._id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td style={{ padding: '10px 16px', fontWeight: 600, color: 'var(--primary)' }}>{item.codigo}</td>
                     <td style={{ padding: '10px 16px', color: 'var(--text-primary)' }}>{item.descripcion}</td>
                     <td style={{ padding: '10px 16px' }}>
                       <span style={{
                         fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '4px',
-                        backgroundColor: eluxen ? '#ede9fe' : item.tipo === 'sensor' ? 'var(--info-bg)' : 'var(--warning-bg)',
-                        color: eluxen ? '#7c3aed' : item.tipo === 'sensor' ? 'var(--info)' : 'var(--warning)',
+                        backgroundColor: item.tipo === 'sensor' ? 'var(--info-bg)' : 'var(--warning-bg)',
+                        color: item.tipo === 'sensor' ? 'var(--info)' : 'var(--warning)',
                       }}>
-                        {eluxen ? 'ELUXEN' : item.tipo === 'sensor' ? 'SENSOR' : item.tipo.toUpperCase()}
+                        {item.tipo.toUpperCase()}
                       </span>
                     </td>
                     <td style={{ padding: '10px 16px', fontWeight: 600, color: bajoMinimo ? 'var(--danger)' : 'var(--success)' }}>
