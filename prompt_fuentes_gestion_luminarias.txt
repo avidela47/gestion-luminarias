@@ -1,0 +1,65 @@
+Te paso la lista CORRECTA y actualizada de fuentes Mean Well, tal como están cargadas en el catálogo oficial de itelsasas.com (MongoDB, colección products). Usá esta lista como referencia única para corregir/completar la sección de Sensores y Fuentes en gestion-luminarias. Formato: MODELO | STOCK
+
+MODELO | STOCK
+Fuente Driver LED Mean Well APC-35-500 Corriente Constante | 5
+Fuente LED Estanca Mean Well APV-16-24 24V 16W | 10
+Fuente Driver LED Mean Well LPC-35-1050 Corriente Constante | 6
+Fuente LED Estanca Mean Well LPV-100-12 12V 100W | 56
+Fuente LED Estanca Mean Well LPV-100-24 24V 100W | 14
+Fuente LED Estanca Mean Well LPV-150-12 12V 150W | 18
+Fuente LED Estanca Mean Well LPV-20-12 12V 20W | 0
+Fuente LED Estanca Mean Well LPV-35-12 12V 35W | 24
+Fuente LED Estanca Mean Well LPV-60-12 12V 60W | 38
+Fuente Switching Industrial Slim Mean Well LRS-100-12 12V 100W | 416
+Fuente Switching Industrial Slim Mean Well LRS-100-24 24V 100W | 184
+Fuente Switching Industrial Mean Well LRS-100-5 5V 18A 90W | 0
+Fuente Switching Industrial Slim Mean Well LRS-150-12 12V 150W | 109
+Fuente Switching Industrial Slim Mean Well LRS-150-15 15V 150W | 6
+Fuente Switching Industrial Slim Mean Well LRS-150-24 24V 150W | 64
+Fuente Switching Industrial Mean Well LRS-200-12 12V 200W | 25
+Fuente Switching Industrial Mean Well LRS-200-24 24V 200W | 36
+Fuente Switching Industrial Mean Well LRS-200-5 5V 40A 200W | 0
+Fuente de Alimentación Mean Well CEN-75-30 30V 75W | 1
+Fuente Riel DIN Mean Well DDR-60L-24 24V 60W | 30
+Fuente Riel DIN Mean Well EDR-120-24 Metálica Slim 24V 5A 120W | 1
+Fuente Riel DIN Mean Well EDR-150-24 Metalica Slim 24V 6.5A 150W | 2
+Fuente Riel DIN Mean Well EDR-75-12 Metálica Slim 12V 6.3A 75W | 1
+Fuente Riel DIN Mean Well EDR-75-24 Metálica Slim 24V 3.2A 75W | 1
+Fuente Switching Industrial Slim Mean Well LRS-35-12 12V 3A 35W | 97
+Fuente Switching Industrial Slim Mean Well LRS-35-24 24V 1.5A 35W | 82
+Fuente Switching Industrial Mean Well LRS-350-12 12V 29A 350W | 65
+Fuente Switching Industrial Mean Well LRS-350-24 24V 14.6A 350W | 191
+Fuente Switching Industrial Mean Well LRS-350-5 5V 60A 300W | 2
+Fuente Switching Industrial Slim Mean Well LRS-50-12 12V 4.2A 50W | 59
+Fuente Switching Industrial Slim Mean Well LRS-50-24 24V 2.2A 50W | 20
+Fuente Switching Industrial Slim Mean Well LRS-50-5 5V 10A 50W | 0
+Fuente Switching Industrial Slim Mean Well LRS-75-12 12V 6A 75W | 2
+Fuente Switching Industrial Slim Mean Well LRS-75-24 24V 3.2A 75W | 215
+Fuente Riel DIN Mean Well MDR-100-12 12V 90W | 0
+Fuente Riel DIN Mean Well MDR-100-24 24V 96W | 5
+Fuente Riel DIN Mean Well MDR-60-24 24V 60W | 0
+Fuente Riel DIN Mean Well NDR-240-24 24V 10A 240W | 0
+Fuente Riel DIN Mean Well NDR-240-48 48V 5A 240W | 3
+Fuente Riel DIN Mean Well NDR-480-24 24V 20A 480W | 1
+Fuente Riel DIN Mean Well NDR-480-48 48V 10A 480W | 10
+Fuente Riel DIN Mean Well NDR-75-24 24V 3.2A 75W | 1
+Fuente de Alimentación Médica Encapsulada Mean Well NFM-05-5 5V 5W | 110
+Fuente Driver LED Mean Well PCD-16-700B Corriente Constante | 2
+Fuente Switching Industrial Mean Well RS-15-12 12V 1.3A 15W | 1
+Fuente Switching Industrial de Alta Potencia Mean Well RSP-1600-48 de Alta Potencia 48V 1600W | 0
+Fuente Switching Industrial con PFC Mean Well RSP-200-24 con PFC 24V 200W | 1
+Fuente Switching Industrial con PFC Mean Well RSP-320-24 con PFC 24V 320W | 1
+Fuente Switching Industrial con PFC Mean Well RSP-500-24 con PFC 24V 500W | 2
+Convertidor DC/DC Industrial Mean Well SD-25B-12 24V 12V 25W | 0
+Convertidor DC/DC Industrial Mean Well SD-25B-5 24V 5V 25W | 1
+Convertidor DC/DC Industrial Mean Well SD-25C-24 72V 24V 25W | 1
+Convertidor DC/DC Industrial Mean Well SD-350B-24 36V 24V 350W | 4
+Fuente Riel DIN Mean Well SDR-480P-48 Paralelizable 48V 10A 480W | 1
+Fuente Riel DIN Mean Well XTR-960-24 | 0
+Fuente Riel DIN Mean Well MDR-60-12 12V 5A 60W | 0
+Fuente Switching Industrial Mean Well RSP-3000-48 3000W 48V 62.5A | 0
+Fuente LED Estanca Mean Well APV-12-12 12V 12W | 5
+Fuente LED Estanca Mean Well APV-25-12 12V 25W | 6
+Fuente de Alimentación Conmutada / Tipo Riel DIN Ultra Delgada Mean Well HDR-30-24 | 0
+Fuente de Alimentación Conmutada Trifásica / Tipo Riel DIN Mean Well XTR-480-24 | 3
+Fuente de Alimentación Conmutada / Tipo Riel DIN Ultra Delgada Mean Well HDR-15-5 | 0
