@@ -40,6 +40,7 @@ const menuItems = [
       { label: 'Presupuestos', href: '/presupuestos', icon: FileText, soloAdmin: true },
       { label: 'Órdenes de Trabajo', href: '/ordenes', icon: ClipboardList, soloAdmin: true },
       { label: 'Recibos', href: '/recibos', icon: Receipt, soloAdmin: true },
+            { label: 'Remitos', href: '/remitos', icon: ClipboardList, soloAdmin: true },
       { label: 'Despachos', href: '/despachos', icon: PackageCheck, soloAdmin: true },
     ],
   },
