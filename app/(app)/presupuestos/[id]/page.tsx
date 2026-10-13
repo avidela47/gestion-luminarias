@@ -92,7 +92,7 @@ export default function VerPresupuestoPage() {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
             <div>
-             <img src="/logo.png" alt="ITELSA SAS" style={{ height: '60px', objectFit: 'contain', marginBottom: '8px', display: 'block' }} />
+           <img src="/logo.png" alt="ITELSA SAS" style={{ height: '60px', objectFit: 'contain', marginBottom: '8px', display: 'block' }} />
 <div style={{ fontSize: '22px', fontWeight: 800, color: '#2d7d78', letterSpacing: '1px' }}>{EMPRESA.razon_social}</div>
               <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>{EMPRESA.domicilio}</div>
               <div style={{ fontSize: '12px', color: '#64748b' }}>{EMPRESA.localidad}, {EMPRESA.provincia}</div>
