@@ -35,26 +35,6 @@ async function descontarStock(items: { codigo: string; tipo: string; cantidad: n
   }
 }
 
-async function devolverStock(items: { codigo: string; tipo: string; cantidad: number }[]) {
-  for (const item of items) {
-    if (item.tipo === 'fabricada') {
-      await ProductoTerminado.findOneAndUpdate(
-        { codigo_luminaria: item.codigo.toUpperCase() },
-        { $inc: { stock_actual: item.cantidad } }
-      )
-    } else if (item.tipo === 'comercial') {
-      await LuminariaComercial.findOneAndUpdate(
-        { codigo: item.codigo.toUpperCase() },
-        { $inc: { stock_actual: item.cantidad } }
-      )
-    } else if (item.tipo === 'sensor') {
-      await SensorFuente.findOneAndUpdate(
-        { codigo: item.codigo.toUpperCase() },
-        { $inc: { stock_actual: item.cantidad } }
-      )
-    }
-  }
-}
 
 export async function GET() {
   try {
