@@ -22,17 +22,6 @@ async function buscarStock(codigo: string): Promise<{ tipo: Tipo; disponible: nu
   return null
 }
 
-async function descontar(codigo: string, tipo: Tipo, cantidad: number) {
-  const cod = codigo.toUpperCase()
-  if (tipo === 'fabricada') {
-    await ProductoTerminado.findOneAndUpdate({ codigo_luminaria: cod }, { $inc: { stock_actual: -cantidad } })
-  } else if (tipo === 'comercial') {
-    await LuminariaComercial.findOneAndUpdate({ codigo: cod }, { $inc: { stock_actual: -cantidad } })
-  } else {
-    await SensorFuente.findOneAndUpdate({ codigo: cod }, { $inc: { stock_actual: -cantidad } })
-  }
-}
-
 async function generarNumeroProyecto(): Promise<string> {
   const counter = await Counter.findOneAndUpdate(
     { _id: 'proyectos' },
@@ -131,10 +120,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }, { status: 400 })
     }
 
-    for (const item of planDescuento) {
-      await descontar(item.codigo, item.tipo, item.cantidad)
-    }
-
+    // NO descuenta stock — el descuento ocurre al crear el Despacho
     await OrdenTrabajo.findByIdAndUpdate(id, {
       $set: {
         ejecutada: true,
@@ -146,7 +132,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     await registrarAuditoria({
       req, accion: 'editar', modulo: 'Ordenes',
-      detalle: `Ejecutó OT ${orden.numero} — descontó stock de ${planDescuento.length} ítem(s)`,
+      detalle: `Ejecutó OT ${orden.numero} — planificó descuento de ${planDescuento.length} ítem(s) pendiente de despacho`,
       dato_id: id,
     })
 
@@ -167,7 +153,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json({
       ok: true,
-      mensaje: 'Orden ejecutada. Stock descontado correctamente.',
+      mensaje: 'Orden ejecutada. El stock se descontará al crear el despacho.',
       en_stock: enStock,
       a_fabricar: [],
     })
