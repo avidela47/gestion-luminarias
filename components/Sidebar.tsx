@@ -53,12 +53,22 @@ const menuItems = [
   },
 ]
 
-export default function Sidebar({ nombreUsuario, rol }: { nombreUsuario: string; rol: string }) {
+export default function Sidebar({
+  nombreUsuario,
+  rol,
+  abierto = false,
+  onNavegar,
+}: {
+  nombreUsuario: string
+  rol: string
+  abierto?: boolean
+  onNavegar?: () => void
+}) {
   const pathname = usePathname()
   const esAdmin = rol === 'admin'
 
   return (
-    <aside style={{
+    <aside id="menu-lateral" className={`app-sidebar${abierto ? ' open' : ''}`} style={{
       width: '240px', minHeight: '100vh',
       backgroundColor: 'var(--sidebar-bg)',
       borderRight: '1px solid var(--sidebar-border)',
@@ -98,7 +108,7 @@ export default function Sidebar({ nombreUsuario, rol }: { nombreUsuario: string;
                 const Icon = item.icon
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
                 return (
-                  <Link key={item.href} href={item.href}
+                  <Link key={item.href} href={item.href} onClick={onNavegar}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '10px',
                       padding: '9px 20px', margin: '1px 8px', borderRadius: '6px',

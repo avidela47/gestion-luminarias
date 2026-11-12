@@ -68,3 +68,201 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* =====================================================
+   LAYOUT DE LA APP (escritorio) + ADAPTACIÓN A CELULAR
+   ===================================================== */
+
+.app-main {
+  margin-left: 240px;
+  flex: 1;
+  min-width: 0;
+  min-height: 100vh;
+  background-color: var(--background);
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-topbar,
+.sidebar-overlay {
+  display: none;
+}
+
+/* Tablet y celular: el menú lateral pasa a ser hamburguesa */
+@media (max-width: 900px) {
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    padding: 0 12px;
+    background-color: var(--sidebar-bg);
+    border-bottom: 1px solid var(--sidebar-border);
+    z-index: 60;
+  }
+
+  .mobile-topbar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+
+  .mobile-topbar-btn:active {
+    background-color: var(--sidebar-hover);
+  }
+
+  .mobile-topbar-logo {
+    height: 36px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .app-sidebar {
+    width: min(280px, 85vw) !important;
+    height: 100dvh;
+    z-index: 80 !important;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: none;
+    overscroll-behavior: contain;
+  }
+
+  .app-sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(15, 25, 35, 0.25);
+  }
+
+  /* Items del menú más fáciles de tocar */
+  .app-sidebar nav a {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 25, 35, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 70;
+  }
+
+  .sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body.menu-abierto {
+    overflow: hidden;
+  }
+
+  .app-main {
+    margin-left: 0;
+    padding-top: 56px;
+  }
+}
+
+/* Celular */
+@media (max-width: 768px) {
+  /* Evita el zoom automático de iPhone al tocar un campo */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Contenedor de cada pantalla: menos margen */
+  .app-main > div {
+    padding: 16px 12px !important;
+    max-width: 100% !important;
+  }
+
+  /* Títulos con botón al lado: que puedan bajar de línea */
+  .app-main [style*="justify-content: space-between"],
+  .app-main [style*="justify-content:space-between"] {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* Grillas: una columna (las de 4 tarjetas, dos) */
+  .app-main [style*="grid-template-columns"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .app-main [style*="grid-template-columns: repeat(4"],
+  .app-main [style*="grid-template-columns:repeat(4"],
+  .app-main [style*="grid-template-columns: 1fr 1fr 1fr 1fr"],
+  .app-main [style*="grid-template-columns:1fr 1fr 1fr 1fr"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Tablas: scroll horizontal dentro de su tarjeta, sin romper la página */
+  .app-main table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+
+  .app-main table th,
+  .app-main table td {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  /* Campos de búsqueda y filtros a todo el ancho */
+  .app-main [style*="max-width: 360px"],
+  .app-main [style*="max-width:360px"],
+  .app-main [style*="max-width: 380px"],
+  .app-main [style*="max-width:380px"] {
+    max-width: 100% !important;
+  }
+
+  /* Ventanas emergentes: a pantalla casi completa */
+  [style*="position: fixed"][style*="inset: 0"],
+  [style*="position:fixed"][style*="inset:0"] {
+    padding: 8px !important;
+    align-items: flex-start !important;
+    overflow-y: auto;
+  }
+
+  [style*="position: fixed"][style*="inset: 0"] > div,
+  [style*="position:fixed"][style*="inset:0"] > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 16px) !important;
+    margin: 0 !important;
+  }
+
+  /* Botón flotante del chat: más chico y sin tapar acciones */
+  button[style*="bottom: 24px"][style*="right: 24px"],
+  button[style*="bottom:24px"][style*="right:24px"] {
+    bottom: 16px !important;
+    right: 16px !important;
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  div[style*="bottom: 90px"][style*="right: 24px"],
+  div[style*="bottom:90px"][style*="right:24px"] {
+    right: 12px !important;
+    bottom: 76px !important;
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    height: min(440px, calc(100dvh - 100px)) !important;
+  }
+}
